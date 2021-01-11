@@ -4,9 +4,7 @@ const fs = require('fs')
 
 class StravaSportsDataCollector{
     constructor() {
-
     }
-
 
     loadTestData(callback) {
         return new Promise((resolve, reject) => {
@@ -111,16 +109,15 @@ class StravaSportsDataCollector{
         var activityStatistics = this.getStastics(selectedActvities)
         return activityStatistics
     }
-
-    testCall() {
-        var athlete1Token = "26c6f5b33f7c8ac150c6ac4b4c154c845fa096ad"
-        console.log("stats:")
-        this.getSportsStatistics(athlete1Token)
-            .then((stats) => {console.log(stats)})
-    }
 }
 
 
 stravaCon = new StravaSportsDataCollector()
+var athlete1Token = "f6d0bf2f956be3bc66f082192c412760ee5df9a7"
+console.log("stats:")
+stravaCon.getSportsStatistics(athlete1Token)
+    .then((stats) => {console.log(stats)})
 
-stravaCon.testCall()
+// get new access token (valid for 6 h)
+// command:
+// curl -X POST "https://www.strava.com/oauth/token" -F "client_id=59386" -F "client_secret=27d294934a5246889b33d591bf8818af2941a5b2" -F "refresh_token=fe5576ae90d96d619de120ce07ed9348a23c8a70" -F "grant_type=refresh_token"
