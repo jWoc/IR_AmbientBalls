@@ -108,7 +108,7 @@ Questions that are not fully answered right now since a part of the implementati
 - Should all balls move to the middle of the line? They could all start at top and then the server moves them to the middle. When finished they start blinking and notify that they now can be used
 - How are extra sports balls used? (When we only have to persons how do we identify the sports ball for that person? take balls mod 2?) -> Answered on top
 
-- Do we have one button or 5? So does the type of all 5 balls change or of each individiually?
+- Do we have one button or 5? So does the type of all 5 balls change or of each individiually? - SIngle button for all the five balls
 - Should we touch top or bottom of ball to move it up?
 	Also depends on sensor
 
