@@ -1,24 +1,48 @@
 
-// should be a json file 
-// Needs to be given to the constructors
+config = {
+    // should be a json file 
+    // Needs to be given to the constructors
+    ballsPerFramework:  5,
+    minFrameworks: 2,
 
-ballsPerFramework = 5
-minFrameworks = 2
+    testMode: false,
 
-testMode = false
+    frameworks: [
+        {
+            controllerId: "Framework1_Controller",
+            orderedBallIds: [
+                "Framework1_Ball1",
+                "Framework1_Ball2",
+                "Framework1_Ball3",
+                "Framework1_Ball4",
+                "Framework1_Ball5",
+            ],
+        }, {
+            controllerId: "Framework2_Controller",
+            orderedBallIds: [
+                "Framework2_Ball1",
+                "Framework2_Ball2",
+                "Framework2_Ball3",
+                "Framework2_Ball4",
+                "Framework2_Ball5",
+            ],
+        },
+    ],
 
-if (testMode) {
-    ballsPerFramework = 1
-    minFrameworks = 1
+
+    sportsUsers:  [
+        {   name: "Johannes Wocker", 
+            id: "asdfmasdoifasdfsdfasfo",
+        },
+    ],
 }
 
-sportsUsers =  [
-    {   name: "Johannes Wocker", 
-        id: "asdfmasdoifasdfsdfasfo",
-    },
-]
+if (config.testMode) {
+    config.ballsPerFramework = 1
+    config.minFrameworks = 1
+}
 
-
+module.exports = config
 
 
 /**
@@ -29,8 +53,8 @@ sportsUsers =  [
  *      "disconnection"
  * 
  *  Interaction input
- *      "ChangeMode"
- *      "Touch"             append enum value to identify touch area
+ *      "changeMode"
+ *      "touch"             append enum value to identify touch area
  * 
  *  Ball Commands
  *      "setColor"
@@ -42,24 +66,3 @@ sportsUsers =  [
  *      "setPosition"
  * 
  */
-/*
-
-
-
-testFunction (data, fn){
-
-}
-/*socket.on('touch', (touchState) => {
-            
-    console.log('user touched on: ' + touchState);
-});
-
-socket.on('formData', testFunction); 
-
-socket.emit('requestID')
-
-socket.on('registerID', (id) => {
-    console.log(id)
-})
-
-*/

@@ -1,17 +1,74 @@
-
+const config = require('./config')
 
 // TODO we need to handle when we lose a  client 
 // what should happen then? or because we have a prototype we ignore it and assume best conditions?
 class AmbientBallSystem {
+
+    // temporary values used during initialisation
     ballParameters = []
     controllerParameters = []
+
+
     socketID_to_id = {} // map for later debug meesages {scoketID: ID}
     // parameters construction: list of dictionaries like: {socket: <Socket>, id: <String>} and the socket server instance
     constructor(io) {
         this.io = io
-        
+        this.idToSyncedObjects = this.createSyncMapper()
+        console.log(this.idToSyncedObjects)
     }
     
+    createSyncMapper() {
+        var idToSyncedObjects = {}
+
+        // ballsPerFramework is used to check constraints (each framework should have same amount of IDs)
+        //  -> used to check validity of config
+        var ballsPerFramework = config.frameworks[0].orderedBallIds.length
+
+        var controllerSync = []
+        var ballSyncs = []
+
+        
+        var frameworks = config.frameworks
+        // first iteration: combine all synced values
+        for (var frameworkCounter = 0; frameworkCounter < frameworks.length; frameworkCounter++) {
+            var framework = frameworks[frameworkCounter]
+            // sync controller
+            controllerSync.push(framework.controllerId)
+
+            
+            var orderedBallIds = framework.orderedBallIds
+            // condition check: same amount of balls at each framework
+            if (orderedBallIds.length != ballsPerFramework) {
+                throw new Exception("config error: wrong count of balls per framework")
+            }
+
+            // combine all synced balls related to its index
+            for (var i = 0; i < orderedBallIds.length; i++) {
+                if (frameworkCounter == 0) {
+                    // push element at index as one element array
+                    ballSyncs.push([orderedBallIds[i]])
+                } else {
+                    // add id at corresponding position
+                    ballSyncs[i].push(orderedBallIds[i])
+                } 
+            }
+        }
+
+        // create mapping
+        // mapping for controller:
+        controllerSync.forEach((controllerID) => {
+            idToSyncedObjects[controllerID] = controllerSync
+        })
+        // mapping for balls per index:
+        ballSyncs.forEach((ballSync) => {
+            // each ball
+            ballSync.forEach((ballID) => {
+                idToSyncedObjects[ballID] = ballSync
+            })
+        })
+        return idToSyncedObjects
+    }
+
     callibrate() {
 
     }
@@ -34,7 +91,6 @@ class AmbientBallSystem {
             let socket = this.io.of("/").sockets.get(item.socketID)
             this.add_events_balls(socket);
             this.socketID_to_id[item.socketID] = item.id
-            
         });
         this.controllerParameters.forEach(item =>  {
             let socket = this.io.of("/").sockets.get(item.socketID) // of gets the correct namespace where / is the global namespacce I think
@@ -52,29 +108,74 @@ class AmbientBallSystem {
     }   
 
     add_client(id, socketID, isBall) {
-        console.log("addClient is called")
+        
+
+        // check if there is no mapping for this id in the config
+        if (this.idToSyncedObjects[id] == undefined) {
+            throw new Error("No mapping in config for id =\"" + id + "\"")
+        }
+
+        // check that the id is not given twice
+        if( this.ballParameters.map((parameter) => parameter.id).includes(id)
+        || this.controllerParameters.map((parameter) => parameter.id).includes(id)) {
+            throw new Error("ID defined twice: id =\"" + id + "\"")
+        }
+
         if (isBall) {
             this.ballParameters.push({"socketID" : socketID, "id" : id})
         }
         else {
             this.controllerParameters.push({"socketID" : socketID, "id" : id})
         }
-        if (this.ballParameters.length > 1 && this.controllerParameters.length == 1) {
+
+        console.log("client registered: " + id)
+
+        // check if all clients connected
+        if ((this.ballParameters.length + this.controllerParameters.length) == Object.keys(this.idToSyncedObjects).length) {
+            console.log("call finish_intialization\n");
             this.finish_initialization()
         }
+    }
+
+    touch_handler(data) {
+            
+        // identify 
+        // id -> framework
+        // id -> ball / controller
+        // id -> ball + synchronized ball
+        //define mapping function ball -> sync ball[]
+        // check constraints (is ball top position or bottom?)
+        
+        calculate_steps()
+        // get all synced objects 
+        // send command to all synchronized balls e.g 
+        // define funcitons inside the framework
+        // update internal model
+
     }
 
     add_events_balls(socket) {
         // create all events for the sockets
         
         // create room for all balls that are connected together
-        socket.on("touch", (data) => {
-            
+        socket.on("touch", this.touch_handler);
+
+        // create room for all balls that are connected together
+        socket.on("changeMode", () => { // incrementally changed
+
+            // determine changes
+            // apply changes on internal model
+            // get synchronized objects
+            // apply changes on real objects
+
+
+
+            const ballId = 
             // identify 
             // id -> framework
             // id -> ball / controller
             // id -> ball + synchronized ball
-            //define mapping function ball -> sync ball[]
+            // define mapping function ball -> sync ball[]
             // check constraints (is ball top position or bottom?)
             
             calculate_steps()
@@ -84,6 +185,9 @@ class AmbientBallSystem {
             // update internal model
 
         })
+
+
+
         socket.on("test", () => {
             console.log("test called")
         })
