@@ -17,8 +17,11 @@
   },
   "homepage": "https://github.com/jWoc/IR_AmbientBalls#readme",
   "dependencies": {
+    "chalk": "^4.1.0",
     "color": "^3.1.3",
+    "express": "^4.17.1",
     "js-logger": "^1.6.1",
-    "socket.io": "^3.0.5"
+    "socket.io": "^3.0.5",
+    "socket.io-client": "^3.0.5"
   }
 }

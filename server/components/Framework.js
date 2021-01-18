@@ -14,6 +14,10 @@ class Framework {
         }
         this.motorController = MotorController(controllerParameter.socket, controllerParameter.id)
     }
+
+    changeMode() {
+
+    }
 }
 
 

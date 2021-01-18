@@ -8,4 +8,7 @@ class MotorController {
         this.id = id
     }
 
+    calculate_steps() {
+        
+    }
 }

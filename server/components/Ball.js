@@ -12,6 +12,18 @@ class Ball {
         state.push(BallState(0, AmbientBallModes.SPORT))
         state.push(BallState(0, AmbientBallModes.TOUCH))
     }
+
+    // Calculate distance to other ball comparison of internal states
+    distanceNextState() {
+        // distance between two positions 
+        // return an integer / float
+        // call pos code
+        // get internal state position for yourself and the ball
+    }
+
+    next_active_state() {
+
+    }
 }
 
 
@@ -36,6 +48,11 @@ class Position {
     
     constructor() {
         
+    }
+
+    distance(pos2) {
+        // calculates distance between the two
+        // returns an integer / float
     }
     
 }

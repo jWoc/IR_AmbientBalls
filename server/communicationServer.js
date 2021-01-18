@@ -16,6 +16,7 @@ io.on('connection', (socket) => {
     socket.on('server message', (msg) => {
         io.emit('server message', msg);
       });
+    
 
       socket.on("registerBrowser", () => { // can use rooms for browser to send message to all or we use the server message
         // register a browser as listener
@@ -24,7 +25,7 @@ io.on('connection', (socket) => {
 
       socket.on('registerID', (id, isBall) => {
         console.log(id, isBall)
-        system.addClient(id, socket.id, isBall)
+        system.add_client(id, socket.id, isBall)
         // call my own function isBall specifys if it is a ball or a motror
 
     })

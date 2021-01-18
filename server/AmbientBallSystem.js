@@ -16,7 +16,7 @@ class AmbientBallSystem {
 
     }
 
-    sortParameters() {
+    sort_parameters() {
         this.ballParameters.sort((a, b) => {
             return a.id.localeCompare(b.id); // be careful with capitallizations))
         });
@@ -29,7 +29,7 @@ class AmbientBallSystem {
     finish_initialization() {
         console.log("Finishing Initialization by creating Balls and motors")
         console.log("Further sorting the input after the ids")
-        this.sortParameters();
+        this.sort_parameters();
         this.ballParameters.forEach(item => {
             let socket = this.io.of("/").sockets.get(item.socketID)
             this.add_events_balls(socket);
@@ -45,13 +45,13 @@ class AmbientBallSystem {
         
 
         // now create balls and motors
-
+        // initialize balls and controllers with the socket so a ball can emit a command (willbe used in changeMode)
         // emit the go command
         // can just be broadcasted
         this.io.emit("go")
     }   
 
-    addClient(id, socketID, isBall) {
+    add_client(id, socketID, isBall) {
         console.log("addClient is called")
         if (isBall) {
             this.ballParameters.push({"socketID" : socketID, "id" : id})
@@ -66,7 +66,24 @@ class AmbientBallSystem {
 
     add_events_balls(socket) {
         // create all events for the sockets
+        
+        // create room for all balls that are connected together
+        socket.on("touch", (data) => {
+            
+            // identify 
+            // id -> framework
+            // id -> ball / controller
+            // id -> ball + synchronized ball
+            //define mapping function ball -> sync ball[]
+            // check constraints (is ball top position or bottom?)
+            
+            calculate_steps()
+            // get all synced objects 
+            // send command to all synchronized balls e.g 
+            // define funcitons inside the framework
+            // update internal model
 
+        })
         socket.on("test", () => {
             console.log("test called")
         })
@@ -83,6 +100,17 @@ class AmbientBallSystem {
             next();
             })
     }
+
+    // when we lose connnection we to need to delete the instance of the socket ( ball/ controler) and need to go into a state of waiting for a aconnection
+    // test disconnect event 
+
+    // Error handling 
+    // middlware intercept all commands except registerID or in common message to block sockets 
+    // on disconnect send command to start virbating and blinkling to notify user that in error state
+    // on Reconnect check which id is missing and add it again
+    // then callibrate this specific socket
+
+    // Or if connections is lost just rtestart the server and restart he client 
 
     add_events_controller(socket) {
         // create all events for the sockets in here

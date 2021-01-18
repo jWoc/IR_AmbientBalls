@@ -142,6 +142,20 @@ Questions that are not fully answered right now since a part of the implementati
     	- implementing socket connection: send id
     	- create ambient ball system with correct data
 
+### TODOs 18.01.2021 -> Deadline 25.01
+	- add all the functions and events
+    	- Ball Commands
+    	- ChangeMode / Touch
+	- Integration Tests ( specific scenarios)
+	-  Xaver
+      	-  Ball Commands
+      	-  logging on the server side
+   	- Johannes
+     	- ChangeMode / Touch
+     	- connect sports handler to the system
+	- Brindha 
+    	- Client implementation
+    	- maybe a better way to test (mock connections, send fake requests)
 
 
 

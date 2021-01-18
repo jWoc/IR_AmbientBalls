@@ -29,7 +29,6 @@ sportsUsers =  [
  *      "disconnection"
  * 
  *  Interaction input
- *      "ChangeBallMode"
  *      "ChangeMode"
  *      "Touch"             append enum value to identify touch area
  * 
