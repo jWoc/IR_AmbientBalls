@@ -1,4 +1,5 @@
-const Ball = require("./Ball")
+const BallDef = require("./Ball")
+const Ball = BallDef.Ball
 const MotorController = require("./MotorController")
 
 class Framework {
@@ -13,7 +14,7 @@ class Framework {
         
 
         for (var i=0; i < ballParameters.length; i++)  {
-            this.balls.push(new Ball(ballParameters[i].socket, ballParameters[i].id))
+            this.balls.push(new Ball(this, ballParameters[i].socket, ballParameters[i].id))
         }
         this.motorController = new MotorController(controllerParameter.socket, controllerParameter.id)
     }

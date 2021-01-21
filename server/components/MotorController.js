@@ -11,6 +11,10 @@ class MotorController {
     calculate_steps() {
         
     }
+
+    getId() {
+        return this.id
+    }
 }
 
 module.exports = MotorController

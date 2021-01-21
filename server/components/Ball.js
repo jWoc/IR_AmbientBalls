@@ -5,12 +5,17 @@ class Ball {
     state = [];
     active_state = AmbientBallModes.EMOTIONS;
 
-    constructor(socket, id = -1) {
+    constructor(parentFramework, socket, id = -1) {
+        this.parentFramework = parentFramework
         this.socket= socket;
         this.id = id
         this.state.push(new BallState(0, AmbientBallModes.EMOTIONS))
         this.state.push(new BallState(0, AmbientBallModes.SPORT))
         this.state.push(new BallState(0, AmbientBallModes.TOUCH))
+    }
+
+    getFramework() {
+        return this.parentFramework
     }
 
     // Calculate distance to other ball comparison of internal states
@@ -23,6 +28,10 @@ class Ball {
 
     next_active_state() {
 
+    }
+
+    getId() {
+        return this.id
     }
 }
 
@@ -65,4 +74,7 @@ const TOUCHSTATES = {
 }
 
 
-module.exports = Ball
+module.exports = {
+    Ball: Ball, 
+    TOUCHSTATES:TOUCHSTATES
+}

@@ -1,6 +1,7 @@
 const config = require('./config')
 const Framework = require("./components/Framework")
-
+const BallDef = require("./components/Ball")
+const TOUCHSTATES = BallDef.TOUCHSTATES
 
 // TODO we need to handle when we lose a  client 
 // what should happen then? or because we have a prototype we ignore it and assume best conditions?
@@ -12,8 +13,12 @@ class AmbientBallSystem {
 
     frameworks = []
 
-
+    // mapper
     socketID_to_id = {} // map for later debug meesages {scoketID: ID}
+    idToSyncedObjects = {}
+    idToObject = {}
+
+
     // parameters construction: list of dictionaries like: {socket: <Socket>, id: <String>} and the socket server instance
     constructor(io) {
         this.io = io
@@ -106,6 +111,7 @@ class AmbientBallSystem {
         throw new Error("Search Error: param with the following id does not exist: " + id)
     }
 
+
     finish_initialization() {
         console.log("Finishing Initialization by creating Balls and motors")
         console.log("Further sorting the input after the ids")
@@ -130,7 +136,14 @@ class AmbientBallSystem {
             }
 
             // create framework
-            this.frameworks.push[new Framework(ballParameters, controllerParameter)]
+            var frameworkObject = new Framework(ballParameters, controllerParameter)
+            this.frameworks.push[frameworkObject]
+
+            // create mapper (id to object)
+            this.idToObject[frameworkObject.motorController.getId()] = frameworkObject.motorController
+            frameworkObject.balls.forEach((ball) => {
+                this.idToObject[ball.getId()] = ball
+            })
         }
 
         /*this.allBallParameters.forEach(item => {
@@ -183,14 +196,60 @@ class AmbientBallSystem {
         }
     }
 
+    // resolves objects from list of IDs
+    getObjectsById(idList) {
+        var referencedObjects = []
+        idList.forEach((id) => {
+            referencedObjects.push(this.idToObject[id])
+        })
+        return referencedObjects
+    }
+
+
     touch_handler(touchState, socketID) {
 
         console.log("touch handler triggered: " + touchState);
             
         var ballID = this.socketID_to_id[socketID]
         console.log("Caller id: " + ballID)
+
+        // id -> synchronized ball
         var syncedIds = this.idToSyncedObjects[ballID]
-        console.log("Synced objects: " + syncedIds)
+        console.log("Synced ids: ",  syncedIds)
+
+        // id -> ball
+        var ball = this.idToObject[ballID]
+        console.log("Ball object: ", ball)
+
+        // id -> all synchronized balls
+        var syncedBalls = this.getObjectsById(syncedIds)
+        console.log("Synced Ball objects: ", syncedBalls)
+
+        // get Framework it belongs to
+        var framework = ball.getFramework()
+        console.log("Framework: ", framework)
+
+        // id -> all synchronized balls
+        // balls required to adapt position state
+        var syncedBalls = this.getObjectsById(syncedIds)
+        console.log("Synced Ball objects: ", syncedBalls)
+
+        // get corresponding motorController
+        /*var framework = ball.getMotorController()
+        console.log("Framework: ", framework)*/
+
+
+        switch(touchState) {
+            case TOUCHSTATES.TOP:
+                break;
+            case TOUCHSTATES.BOTTOM:
+                break;
+            case TOUCHSTATES.BOTH:
+                break;
+            case TOUCHSTATES.BOTTOM:
+                break;
+        }
+
 
         // identify 
         // id -> framework
