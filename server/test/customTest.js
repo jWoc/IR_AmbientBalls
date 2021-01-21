@@ -1,17 +1,35 @@
 
 const AmbientBallSystem = require("../AmbientBallSystem")
-const IO_Test = require('./IO_Test')
+
+
+socketDict = {}
+
+function registerSocketEventFunction(socketID, message, handler) {
+    // console.log("function registered: " + socketID, message,  handler)
+
+    // register function so that it can be used later
+    socketDict[socketID][message] = handler
+}
+
+function createFakeSockets(socketID) {
+    // room id should be equal to socket id (according current implementation)
+    var fakeSocket = {
+        on: (message, handler) => {registerSocketEventFunction(socketID, message, handler)},
+        use: (data) => {},
+        eventNames: () => {},
+    }
+    socketDict[socketID] = fakeSocket;
+
+    return fakeSocket
+}
+
 
 // for simple socket and io simulation
 const io = {
     emit: (command) => {},
     of: (roomid) => {return {
         sockets: {
-            get: (socketID) => {return {
-                on: (data) => {},
-                use: (data) => {},
-                eventNames: () => {},
-            }}
+            get: createFakeSockets,
         }
     }}
 }
@@ -36,6 +54,9 @@ system.add_client("Framework2_Ball5", "socketID_B10", true)
 
 system.add_client("Framework1_Controller", "socketID_C1", false)
 system.add_client("Framework2_Controller", "socketID_C2", false)
+
+
+socketDict["socketID_B1"]["touch"]("das ist ein test")
 
 console.log("test finished");
 

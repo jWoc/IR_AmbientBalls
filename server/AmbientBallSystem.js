@@ -138,6 +138,8 @@ class AmbientBallSystem {
     }
 
     touch_handler(data) {
+
+        console.log("touch handler triggered: " + data);
             
         // identify 
         // id -> framework
@@ -146,7 +148,7 @@ class AmbientBallSystem {
         //define mapping function ball -> sync ball[]
         // check constraints (is ball top position or bottom?)
         
-        calculate_steps()
+        // calculate_steps()
         // get all synced objects 
         // send command to all synchronized balls e.g 
         // define funcitons inside the framework
