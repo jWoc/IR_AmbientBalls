@@ -17,6 +17,7 @@ function createFakeSockets(socketID) {
         on: (message, handler) => {registerSocketEventFunction(socketID, message, handler)},
         use: (data) => {},
         eventNames: () => {},
+        id: socketID,
     }
     socketDict[socketID] = fakeSocket;
 

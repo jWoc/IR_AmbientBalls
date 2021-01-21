@@ -18,7 +18,7 @@ class AmbientBallSystem {
     constructor(io) {
         this.io = io
         this.idToSyncedObjects = this.createSyncMapper()
-        console.log(this.idToSyncedObjects)
+        // console.log(this.idToSyncedObjects)
     }
     
     createSyncMapper() {
@@ -93,7 +93,7 @@ class AmbientBallSystem {
 
     setupSocket(param, eventRegistrationHandler) {
         let socket = this.getSocketById(param.socketID)
-        eventRegistrationHandler(this, socket);
+        eventRegistrationHandler.call(this, socket);
         this.socketID_to_id[param.socketID] = param.id
         param["socket"] = socket
     }
@@ -183,10 +183,15 @@ class AmbientBallSystem {
         }
     }
 
-    touch_handler(data) {
+    touch_handler(touchState, socketID) {
 
-        console.log("touch handler triggered: " + data);
+        console.log("touch handler triggered: " + touchState);
             
+        var ballID = this.socketID_to_id[socketID]
+        console.log("Caller id: " + ballID)
+        var syncedIds = this.idToSyncedObjects[ballID]
+        console.log("Synced objects: " + syncedIds)
+
         // identify 
         // id -> framework
         // id -> ball / controller
@@ -202,37 +207,19 @@ class AmbientBallSystem {
 
     }
 
-    add_events_balls(context, socket) {
+    changeMod_handler() {
+        // incrementally changed
+
+    }
+
+    add_events_balls(socket) {
         // create all events for the sockets
         
         // create room for all balls that are connected together
-        socket.on("touch", context.touch_handler);
+        socket.on("touch", (touchState) => {this.touch_handler(touchState, socket.id)});
 
         // create room for all balls that are connected together
-        socket.on("changeMode", () => { // incrementally changed
-
-            // determine changes
-            // apply changes on internal model
-            // get synchronized objects
-            // apply changes on real objects
-
-
-
-            const ballId = 
-            // identify 
-            // id -> framework
-            // id -> ball / controller
-            // id -> ball + synchronized ball
-            // define mapping function ball -> sync ball[]
-            // check constraints (is ball top position or bottom?)
-            
-            calculate_steps()
-            // get all synced objects 
-            // send command to all synchronized balls e.g 
-            // define funcitons inside the framework
-            // update internal model
-
-        })
+        socket.on("changeMode", this.changeMod_handler)
 
 
 
@@ -264,7 +251,7 @@ class AmbientBallSystem {
 
     // Or if connections is lost just rtestart the server and restart he client 
 
-    add_events_controller(context, socket) {
+    add_events_controller(socket) {
         // create all events for the sockets in here
 
         socket.on("testConroller", () => {
