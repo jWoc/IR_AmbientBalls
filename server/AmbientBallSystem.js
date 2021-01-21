@@ -1,12 +1,16 @@
 const config = require('./config')
+const Framework = require("./components/Framework")
+
 
 // TODO we need to handle when we lose a  client 
 // what should happen then? or because we have a prototype we ignore it and assume best conditions?
 class AmbientBallSystem {
 
     // temporary values used during initialisation
-    ballParameters = []
-    controllerParameters = []
+    allBallParameters = []
+    allControllerParameters = []
+
+    frameworks = []
 
 
     socketID_to_id = {} // map for later debug meesages {scoketID: ID}
@@ -74,21 +78,63 @@ class AmbientBallSystem {
     }
 
     sort_parameters() {
-        this.ballParameters.sort((a, b) => {
+        this.allBallParameters.sort((a, b) => {
             return a.id.localeCompare(b.id); // be careful with capitallizations))
         });
 
-        this.controllerParameters.sort((a, b) => {
+        this.allControllerParameters.sort((a, b) => {
             return a.id.localeCompare(b.id); // be careful with capitallizations))
         })
+    }
+
+    getSocketById(socketID) {
+        return this.io.of("/").sockets.get(socketID)
+    }
+
+    setupSocket(param, eventRegistrationHandler) {
+        let socket = this.getSocketById(param.socketID)
+        eventRegistrationHandler(this, socket);
+        this.socketID_to_id[param.socketID] = param.id
+        param["socket"] = socket
+    }
+    getParamById(paramList, id) {
+        for (var i=0; i<paramList.length; i++) {
+            if (paramList[i].id == id) {
+                return paramList[i]
+            }
+        }
+        throw new Error("Search Error: param with the following id does not exist: " + id)
     }
 
     finish_initialization() {
         console.log("Finishing Initialization by creating Balls and motors")
         console.log("Further sorting the input after the ids")
-        this.sort_parameters();
-        this.ballParameters.forEach(item => {
-            let socket = this.io.of("/").sockets.get(item.socketID)
+        
+        // todo delete: sort by config on server: fixed sorting
+        // this.sort_parameters();
+
+
+        // build up components
+        for (var frameworkCounter=0; frameworkCounter < config.frameworks.length; frameworkCounter++) {
+            var framework = config.frameworks[frameworkCounter]
+
+            // get socket and register events
+            var controllerParameter = this.getParamById(this.allControllerParameters, framework.controllerId)
+            this.setupSocket(controllerParameter, this.add_events_controller)
+            var ballParameters = []
+            for (var i=0; i<framework.orderedBallIds.length; i++) {
+                var ballID = framework.orderedBallIds[i]
+                var ballParameter = this.getParamById(this.allBallParameters, ballID)
+                ballParameters.push(ballParameter)
+                this.setupSocket(ballParameter, this.add_events_balls)
+            }
+
+            // create framework
+            this.frameworks.push[new Framework(ballParameters, controllerParameter)]
+        }
+
+        /*this.allBallParameters.forEach(item => {
+            
             this.add_events_balls(socket);
             this.socketID_to_id[item.socketID] = item.id
         });
@@ -96,8 +142,8 @@ class AmbientBallSystem {
             let socket = this.io.of("/").sockets.get(item.socketID) // of gets the correct namespace where / is the global namespacce I think
             this.add_events_controller(socket);
             this.socketID_to_id[item.socketID] = item.id // add to map
-            console.log(socket.eventNames())
-        });
+            // console.log(socket.eventNames())
+        });*/
         
 
         // now create balls and motors
@@ -116,22 +162,22 @@ class AmbientBallSystem {
         }
 
         // check that the id is not given twice
-        if( this.ballParameters.map((parameter) => parameter.id).includes(id)
-        || this.controllerParameters.map((parameter) => parameter.id).includes(id)) {
+        if( this.allBallParameters.map((parameter) => parameter.id).includes(id)
+        || this.allControllerParameters.map((parameter) => parameter.id).includes(id)) {
             throw new Error("ID defined twice: id =\"" + id + "\"")
         }
 
         if (isBall) {
-            this.ballParameters.push({"socketID" : socketID, "id" : id})
+            this.allBallParameters.push({"socketID" : socketID, "id" : id})
         }
         else {
-            this.controllerParameters.push({"socketID" : socketID, "id" : id})
+            this.allControllerParameters.push({"socketID" : socketID, "id" : id})
         }
 
         console.log("client registered: " + id)
 
         // check if all clients connected
-        if ((this.ballParameters.length + this.controllerParameters.length) == Object.keys(this.idToSyncedObjects).length) {
+        if ((this.allBallParameters.length + this.allControllerParameters.length) == Object.keys(this.idToSyncedObjects).length) {
             console.log("call finish_intialization\n");
             this.finish_initialization()
         }
@@ -156,11 +202,11 @@ class AmbientBallSystem {
 
     }
 
-    add_events_balls(socket) {
+    add_events_balls(context, socket) {
         // create all events for the sockets
         
         // create room for all balls that are connected together
-        socket.on("touch", this.touch_handler);
+        socket.on("touch", context.touch_handler);
 
         // create room for all balls that are connected together
         socket.on("changeMode", () => { // incrementally changed
@@ -218,7 +264,7 @@ class AmbientBallSystem {
 
     // Or if connections is lost just rtestart the server and restart he client 
 
-    add_events_controller(socket) {
+    add_events_controller(context, socket) {
         // create all events for the sockets in here
 
         socket.on("testConroller", () => {

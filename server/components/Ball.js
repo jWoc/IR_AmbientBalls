@@ -1,4 +1,4 @@
-require('color');
+const Color = require('color');
 
 
 class Ball {
@@ -8,9 +8,9 @@ class Ball {
     constructor(socket, id = -1) {
         this.socket= socket;
         this.id = id
-        state.push(BallState(0, AmbientBallModes.EMOTIONS))
-        state.push(BallState(0, AmbientBallModes.SPORT))
-        state.push(BallState(0, AmbientBallModes.TOUCH))
+        this.state.push(new BallState(0, AmbientBallModes.EMOTIONS))
+        this.state.push(new BallState(0, AmbientBallModes.SPORT))
+        this.state.push(new BallState(0, AmbientBallModes.TOUCH))
     }
 
     // Calculate distance to other ball comparison of internal states
@@ -63,3 +63,6 @@ const TOUCHSTATES = {
     BOTTOM: 3,
     BOTH: 4
 }
+
+
+module.exports = Ball

@@ -12,3 +12,5 @@ class MotorController {
         
     }
 }
+
+module.exports = MotorController

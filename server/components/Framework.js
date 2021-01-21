@@ -1,3 +1,6 @@
+const Ball = require("./Ball")
+const MotorController = require("./MotorController")
+
 class Framework {
 
     balls = []
@@ -10,15 +13,17 @@ class Framework {
         
 
         for (var i=0; i < ballParameters.length; i++)  {
-            this.balls.push(Ball(ballParameters[i].socket, ballParameters[i].id))
+            this.balls.push(new Ball(ballParameters[i].socket, ballParameters[i].id))
         }
-        this.motorController = MotorController(controllerParameter.socket, controllerParameter.id)
+        this.motorController = new MotorController(controllerParameter.socket, controllerParameter.id)
     }
 
     changeMode() {
 
     }
 }
+
+module.exports = Framework
 
 
 
