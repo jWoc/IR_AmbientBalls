@@ -3,9 +3,14 @@
 class MotorController {
 
 
-    constructor(socket, id) {
+    constructor(parentFramwork, socket, id) {
+        this.parentFramwork = parentFramwork
         this.socket = socket
         this.id = id
+    }
+
+    getFramework() {
+        return this.parentFramwork
     }
 
     calculate_steps() {

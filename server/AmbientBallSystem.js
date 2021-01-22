@@ -243,6 +243,8 @@ class AmbientBallSystem {
         // determine move command
         var moveValue = framework.getMotorController().calculateMoveDistance(ball, moveUp, config.moveStepSize)
 
+        // TODO: update internal model
+
         // will be zero if condition not fulfilled
         if (moveValue > 0) {
             syncedFrameworks.forEach((syncedFramework)=> {
@@ -252,45 +254,15 @@ class AmbientBallSystem {
     }
 
     skinHandler(socketID) {
+        // get relevant objects
+        var ball = this.getObjectBySocketId(socketID)
+        var syncedBalls = this.getSyncedObjectsById(ball.getId())
+
         throw new Error("skinHandler not yet Implemented")
     }
 
 
     touch_handler(touchState, socketID) {
-
-        /*console.log("touch handler triggered: " + touchState);
-            
-        var ballID = this.socketID_to_id[socketID]
-        console.log("Caller id: " + ballID)
-
-        // id -> synchronized ball
-        var syncedIds = this.idToSyncedObjects[ballID]
-        console.log("Synced ids: ",  syncedIds)
-
-        // id -> ball
-        var ball = this.idToObject[ballID]
-        console.log("Ball object: ", ball)
-
-        // id -> all synchronized balls
-        var syncedBalls = this.getObjectsById(syncedIds)
-        console.log("Synced Ball objects: ", syncedBalls)
-
-        // get Framework it belongs to
-        var framework = ball.getFramework()
-        console.log("Framework: ", framework)
-
-        // id -> all synchronized balls
-        // balls required to adapt position state
-        var syncedBalls = this.getObjectsById(syncedIds)
-        console.log("Synced Ball objects: ", syncedBalls)
-
-        // get corresponding motorController
-        var motorController = framework.getMotorController()
-        console.log("Motor Controller: ", motorController)
-
-
-        motorController*/
-
         switch(touchState) {
             case TOUCHSTATES.TOP:
             case TOUCHSTATES.BOTTOM: 
@@ -303,26 +275,42 @@ class AmbientBallSystem {
                 throw new Error("Touch event \"" + touchState + "\" should not be received on the server")
                 break;
         }
-
-
-        // identify 
-        // id -> framework
-        // id -> ball / controller
-        // id -> ball + synchronized ball
-        //define mapping function ball -> sync ball[]
-        // check constraints (is ball top position or bottom?)
-        
-        // calculate_steps()
-        // get all synced objects 
-        // send command to all synchronized balls e.g 
-        // define funcitons inside the framework
-        // update internal model
-
     }
 
-    changeMod_handler() {
+    updateBalls(ballList, mod) {
+        throw new Error("updateBalls: not yet implemented")
+        // todo: send ball state updates: blink, vibrate, color: depends on mod
+        // update ball active state
+    }
+
+    updateMotorController(moveValues, motorController) {
+        for (var ballIndex=0; ballIndex < moveValues.length; ballIndex++) {
+            if (moveValues[ballIndex] > 0) {
+                motorController.sendMoveCommand(moveValues[ballIndex], ballIndex)
+            }
+        }
+    }
+
+    changeMod_handler(socketID) {
         // incrementally changed
 
+        // get relevant objects
+        var motorController = this.getObjectBySocketId(socketID)
+        var framework = motorController.getFramework()
+        var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
+
+        var moveValues = []
+        // todo: get position changes for each ball
+
+
+        // update frameworks
+        syncedFrameworks.forEach((syncedFramework) => {
+            // update ball positions
+            this.updateMotorController(moveValues, syncedFramework.getMotorController())
+
+            // reset Balls to initial values per mode
+            resetBalls(syncedFramework.getBalls(), mode)
+        })
     }
 
     add_events_balls(socket) {
@@ -332,7 +320,7 @@ class AmbientBallSystem {
         socket.on("touch", (touchState) => {this.touch_handler(touchState, socket.id)});
 
         // create room for all balls that are connected together
-        socket.on("changeMode", this.changeMod_handler)
+        socket.on("changeMode", () =>{this.changeMod_handler(socket.id)})
 
 
 

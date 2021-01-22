@@ -17,7 +17,7 @@ class Framework {
         for (var i=0; i < ballParameters.length; i++)  {
             this.balls.push(new Ball(this, ballParameters[i].socket, ballParameters[i].id))
         }
-        this.motorController = new MotorController(controllerParameter.socket, controllerParameter.id)
+        this.motorController = new MotorController(this, controllerParameter.socket, controllerParameter.id)
     }
 
     getIndex(ball) {
