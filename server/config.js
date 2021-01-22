@@ -5,10 +5,15 @@ config = {
     ballsPerFramework:  5,
     minFrameworks: 2,
 
+    // ball Movement
+    moveStepSize: 10/100,
+
     testMode: false,
 
+    // framework setup
     frameworks: [
         {
+            id: "Framwork1",
             controllerId: "Framework1_Controller",
             orderedBallIds: [
                 "Framework1_Ball1",
@@ -18,6 +23,7 @@ config = {
                 "Framework1_Ball5",
             ],
         }, {
+            id: "Framwork2",
             controllerId: "Framework2_Controller",
             orderedBallIds: [
                 "Framework2_Ball1",

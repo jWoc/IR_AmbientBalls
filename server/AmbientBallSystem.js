@@ -33,6 +33,7 @@ class AmbientBallSystem {
         //  -> used to check validity of config
         var ballsPerFramework = config.frameworks[0].orderedBallIds.length
 
+        var frameworkSync = []
         var controllerSync = []
         var ballSyncs = []
 
@@ -41,6 +42,10 @@ class AmbientBallSystem {
         // first iteration: combine all synced values
         for (var frameworkCounter = 0; frameworkCounter < frameworks.length; frameworkCounter++) {
             var framework = frameworks[frameworkCounter]
+
+            // sync framework
+            frameworkSync.push(framework.id)
+
             // sync controller
             controllerSync.push(framework.controllerId)
 
@@ -64,10 +69,16 @@ class AmbientBallSystem {
         }
 
         // create mapping
+        // mapping for framework:
+        frameworkSync.forEach((frameworkID) => {
+            idToSyncedObjects[frameworkID] = frameworkSync
+        })
+
         // mapping for controller:
         controllerSync.forEach((controllerID) => {
             idToSyncedObjects[controllerID] = controllerSync
         })
+
         // mapping for balls per index:
         ballSyncs.forEach((ballSync) => {
             // each ball
@@ -136,12 +147,14 @@ class AmbientBallSystem {
             }
 
             // create framework
-            var frameworkObject = new Framework(ballParameters, controllerParameter)
+            var frameworkObject = new Framework(framework.id, ballParameters, controllerParameter)
             this.frameworks.push[frameworkObject]
 
             // create mapper (id to object)
-            this.idToObject[frameworkObject.motorController.getId()] = frameworkObject.motorController
-            frameworkObject.balls.forEach((ball) => {
+            this.idToObject[frameworkObject.getId()] = frameworkObject
+            var motorController = frameworkObject.getMotorController()
+            this.idToObject[motorController.getId()] = motorController
+            frameworkObject.getBalls().forEach((ball) => {
                 this.idToObject[ball.getId()] = ball
             })
         }
@@ -190,7 +203,7 @@ class AmbientBallSystem {
         console.log("client registered: " + id)
 
         // check if all clients connected
-        if ((this.allBallParameters.length + this.allControllerParameters.length) == Object.keys(this.idToSyncedObjects).length) {
+        if ((this.allBallParameters.length + (2*this.allControllerParameters.length)) == Object.keys(this.idToSyncedObjects).length) {
             console.log("call finish_intialization\n");
             this.finish_initialization()
         }
@@ -206,9 +219,46 @@ class AmbientBallSystem {
     }
 
 
+    getObjectBySocketId(socketID) {
+        var id = this.socketID_to_id[socketID]
+        var object = this.idToObject[id]
+        return object
+    }
+
+    getSyncedObjectsById(id) {
+        var syncedIds = this.idToSyncedObjects[id]
+        return this.getObjectsById(syncedIds)
+    }
+
+    moveHandler(touchState, socketID) {
+        // get relevant objects
+        var ball = this.getObjectBySocketId(socketID)
+        var framework = ball.getFramework()
+        var ballIndex = framework.getIndex(ball)
+        var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
+
+        // determine move direction
+        var moveUp = touchState == TOUCHSTATES.BOTTOM
+
+        // determine move command
+        var moveValue = framework.getMotorController().calculateMoveDistance(ball, moveUp, config.moveStepSize)
+
+        // will be zero if condition not fulfilled
+        if (moveValue > 0) {
+            syncedFrameworks.forEach((syncedFramework)=> {
+                syncedFramework.getMotorController().sendMoveCommand(moveValue, ballIndex)
+            })
+        }
+    }
+
+    skinHandler(socketID) {
+        throw new Error("skinHandler not yet Implemented")
+    }
+
+
     touch_handler(touchState, socketID) {
 
-        console.log("touch handler triggered: " + touchState);
+        /*console.log("touch handler triggered: " + touchState);
             
         var ballID = this.socketID_to_id[socketID]
         console.log("Caller id: " + ballID)
@@ -235,18 +285,22 @@ class AmbientBallSystem {
         console.log("Synced Ball objects: ", syncedBalls)
 
         // get corresponding motorController
-        /*var framework = ball.getMotorController()
-        console.log("Framework: ", framework)*/
+        var motorController = framework.getMotorController()
+        console.log("Motor Controller: ", motorController)
 
+
+        motorController*/
 
         switch(touchState) {
             case TOUCHSTATES.TOP:
+            case TOUCHSTATES.BOTTOM: 
+                    this.moveHandler(touchState, socketID)
                 break;
-            case TOUCHSTATES.BOTTOM:
+            case TOUCHSTATES.BOTH: 
+                    this.skinHandler(socketID)
                 break;
-            case TOUCHSTATES.BOTH:
-                break;
-            case TOUCHSTATES.BOTTOM:
+            default: 
+                throw new Error("Touch event \"" + touchState + "\" should not be received on the server")
                 break;
         }
 

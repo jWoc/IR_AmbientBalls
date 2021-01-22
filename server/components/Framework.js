@@ -10,8 +10,9 @@ class Framework {
     sportsUsers= Array(5).fill(-1)
     
     // caller has to make sure it is ordered
-    constructor(ballParameters, controllerParameter) { 
+    constructor(id, ballParameters, controllerParameter) { 
         
+        this.id = id
 
         for (var i=0; i < ballParameters.length; i++)  {
             this.balls.push(new Ball(this, ballParameters[i].socket, ballParameters[i].id))
@@ -19,8 +20,26 @@ class Framework {
         this.motorController = new MotorController(controllerParameter.socket, controllerParameter.id)
     }
 
+    getIndex(ball) {
+        return this.balls.indexOf(ball)
+    }
+
     changeMode() {
 
+    }
+
+    getBalls() {
+        return this.balls
+    }
+
+
+
+    getId() {
+        return this.id
+    }
+
+    getMotorController() {
+        return this.motorController;
     }
 }
 

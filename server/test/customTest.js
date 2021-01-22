@@ -1,6 +1,7 @@
 
 const AmbientBallSystem = require("../AmbientBallSystem")
-
+const BallDef = require("../components/Ball")
+const TOUCHSTATES = BallDef.TOUCHSTATES
 
 socketDict = {}
 
@@ -56,8 +57,7 @@ system.add_client("Framework2_Ball5", "socketID_B10", true)
 system.add_client("Framework1_Controller", "socketID_C1", false)
 system.add_client("Framework2_Controller", "socketID_C2", false)
 
-
-socketDict["socketID_B1"]["touch"]("das ist ein test")
+socketDict["socketID_B3"]["touch"](TOUCHSTATES.TOP)
 
 console.log("test finished");
 
