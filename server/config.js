@@ -10,7 +10,8 @@ config = {
 
     testMode: false,
 
-    sporstUpdateIntervall: 3000, // 1 second
+    sporstUpdateIntervall: 5000, // miliseconds
+    activateSportSync: true,
 
     // get new access token (valid for 6 h)
     // command for athlete 1 (Johannes Wocker):

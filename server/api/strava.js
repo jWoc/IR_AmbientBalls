@@ -49,7 +49,7 @@ class StravaSportsDataCollector{
             selectedActvities.push(data)
         }
 
-        console.log("Activities in considered time interval: " + filteredActivities.length)
+        // console.log("Activities in considered time interval: " + filteredActivities.length)
         return selectedActvities
     }
 
@@ -65,7 +65,7 @@ class StravaSportsDataCollector{
             // server response
             var response = ""
             const req = https.request(options, res => {
-                console.log(`statusCode: ${res.statusCode}`)
+                // console.log(`statusCode: ${res.statusCode}`)
 
                 res.on('data', d => {
                     // gather sports response data (activity data is too large for one single packet, therefore we need to sample it back from the packets)
@@ -112,13 +112,6 @@ class StravaSportsDataCollector{
 }
 
 
-stravaCon = new StravaSportsDataCollector()
-
-var athlete1Token = "45e062fc6d50088ebd0afd9b2ab039ec9c6ab973"
-var athlete2Token = "106cf69733f79698f9bb2c91b863c0698a109708"
-
-console.log("stats:")
-stravaCon.getSportsStatistics(athlete2Token)
-    .then((stats) => {console.log(stats)})
+module.exports = StravaSportsDataCollector
 
 

@@ -2,6 +2,9 @@ const config = require('./config')
 const Framework = require("./components/Framework")
 const BallDef = require("./components/Ball")
 const TOUCHSTATES = BallDef.TOUCHSTATES
+const Position = BallDef.Position
+const StravaSportsDataCollector = require("./api/strava")
+
 
 // TODO we need to handle when we lose a  client 
 // what should happen then? or because we have a prototype we ignore it and assume best conditions?
@@ -25,12 +28,16 @@ class AmbientBallSystem {
         this.io = io
         this.idToSyncedObjects = this.createSyncMapper()
 
-        
-        // trigger sports model updater
-        this.updateSportsModel()
-        this.sportsTimer = setInterval(() => {
-            this.updateSportsModel()
-        }, config.sporstUpdateIntervall)
+        // initiate Sports-API Connection
+        this.sportsConnection = new StravaSportsDataCollector()
+
+        if (config.activateSportSync) {
+            // trigger sports model updater
+            this.updateSportsState()
+            this.sportsTimer = setInterval(() => {
+                this.updateSportsState()
+            }, config.sporstUpdateIntervall)
+        }
     }
     
     createSyncMapper() {
@@ -380,8 +387,40 @@ class AmbientBallSystem {
         io.sockets.to(userId).emit(event, data);
     }
 
-    updateSportsModel() {
-        console.log(config.athletes)
+    updateAthleteState(athlete, stats) {
+        console.log(stats)
+        // get relevant object
+        var ball = this.idToObject[athlete.syncedBall]
+        var ballState = ball.getSportsState()
+
+        // calculate target position
+        var activeHours = stats[1]
+        var targetPercentagePos = activeHours / athlete.baseline
+        if (targetPercentagePos > 1) {
+            targetPercentagePos = 1
+        }
+        // console.log("targetPos: ", targetPos)
+        var targetPos = new Position(targetPercentagePos)
+        var distance = ballState.distance(targetPos)
+        if (distance != 0) {
+            // TODO calculate steps
+            // TODO send command
+            // ball.message()
+            console.log("Ball Movement command: Distance: ", distance)
+
+            // update internal model:
+            ballState.setPosition(targetPos)
+        }
+
+    }
+
+    updateSportsState() {
+        config.athletes.forEach((athlete) =>  {
+            console.log("name: ", athlete.name)
+            this.sportsConnection.getSportsStatistics(athlete.access_token)
+                .then((stats) => {this.updateAthleteState(athlete, stats)})
+        })
+        
     }
 }
 

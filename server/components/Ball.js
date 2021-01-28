@@ -9,9 +9,9 @@ class Ball {
         this.parentFramework = parentFramework
         this.socket= socket;
         this.id = id
-        this.state.push(new BallState(0, AmbientBallModes.EMOTIONS))
-        this.state.push(new BallState(0, AmbientBallModes.SPORT))
-        this.state.push(new BallState(0, AmbientBallModes.TOUCH))
+        this.state.push(new BallState(new Position(0), AmbientBallModes.EMOTIONS))
+        this.state.push(new BallState(new Position(0), AmbientBallModes.SPORT))
+        this.state.push(new BallState(new Position(0), AmbientBallModes.TOUCH))
     }
 
     getFramework() {
@@ -33,6 +33,9 @@ class Ball {
     getId() {
         return this.id
     }
+    getSportsState() {
+        return this.state[AmbientBallModes.SPORT]
+    }
 }
 
 
@@ -44,26 +47,35 @@ const AmbientBallModes  = {
 
 class BallState {
     
-    constructor(position = 0, mode = AmbientBallModes.EMOTIONS) {
+    constructor(position, mode = AmbientBallModes.EMOTIONS) {
         this.position = position  
         this.mode = mode;  
         this.color = Color('rgb(255, 255, 255)');
         this.touch = TOUCHSTATES.NOTHING;
     }
+
+    distance(targetPosition) {
+        return this.position.distance(targetPosition)
+    }
+    setPosition(targetPosition) {
+        this.position = targetPosition
+    }
 }
 
 
 class Position {
-    
-    constructor() {
-        
+    constructor(pos) {
+        this.pos = pos
     }
 
-    distance(pos2) {
+    distance(targetPosition) {
         // calculates distance between the two
         // returns an integer / float
+        return (targetPosition.getPercentagePosition() - this.getPercentagePosition())
     }
-    
+    getPercentagePosition() {
+        return this.pos
+    }
 }
 
 const TOUCHSTATES = {
@@ -76,5 +88,6 @@ const TOUCHSTATES = {
 
 module.exports = {
     Ball: Ball, 
-    TOUCHSTATES:TOUCHSTATES
+    TOUCHSTATES:TOUCHSTATES,
+    Position:Position,
 }
