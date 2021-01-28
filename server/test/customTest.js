@@ -58,7 +58,7 @@ system.add_client("Framework2_Ball5", "socketID_B10", true)
 system.add_client("Framework1_Controller", "socketID_C1", false)
 system.add_client("Framework2_Controller", "socketID_C2", false)
 
-socketDict["socketID_B3"]["touch"](TOUCHSTATES.TOP)
+socketDict["socketID_B3"]["touch"](TOUCHSTATES.BOTTOM)
 
 console.log("test finished");
 

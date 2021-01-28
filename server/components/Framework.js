@@ -6,8 +6,6 @@ class Framework {
 
     balls = []
     sportsUser = "Ball 5"
-
-    sportsUsers= Array(5).fill(-1)
     
     // caller has to make sure it is ordered
     constructor(id, ballParameters, controllerParameter) { 

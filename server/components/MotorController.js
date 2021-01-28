@@ -37,26 +37,24 @@ class MotorController {
         return moveValue
     }
 
-    updatePosition(ballIndex, ballState, moveValue) {
+    updatePosition(ballIndex, ballState, moveValue, isActiveState) {
         console.log("updatePosition: ", moveValue, ballIndex)
 
 
-        // TODO: Condition Check
+        // move value can be changed by Condition Check
+        var adaptedMoveValue = ballState.applyPositionChange(moveValue)
 
+        if ((adaptedMoveValue != 0) && isActiveState) {
+            // TODO: calculate steps from percentage (adaptedMoveValue)
+            var calculatedSteps = 0
 
-        // TODO: calculate steps from percentage
-        var calculatedSteps = 0
-
-        var moveCommandValue = {
-            targetBallIndex: ballIndex,
-            moveValue: moveValue,
-            calculatedSteps: calculatedSteps,
+            var moveCommandValue = {
+                targetBallIndex: ballIndex,
+                moveValue: adaptedMoveValue,
+                calculatedSteps: calculatedSteps,
+            }
+            this.socket.emit("setPosition", moveCommandValue)
         }
-        this.socket.emit("setPosition", moveCommandValue)
-
-        // TODO: generate target Pos
-        // TODO: update internal model:
-        // ballState.setPosition(targetPos)
     }
 }
 

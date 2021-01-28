@@ -3,6 +3,7 @@ const Framework = require("./components/Framework")
 const BallDef = require("./components/Ball")
 const TOUCHSTATES = BallDef.TOUCHSTATES
 const Position = BallDef.Position
+const AmbientBallModes = BallDef.AmbientBallModes
 const StravaSportsDataCollector = require("./api/strava")
 
 
@@ -246,26 +247,29 @@ class AmbientBallSystem {
     moveHandler(touchState, socketID) {
         // get relevant objects
         var ball = this.getObjectBySocketId(socketID)
-        var framework = ball.getFramework()
-        var ballIndex = framework.getIndex(ball)
-        var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
+        if (ball.active_state == AmbientBallModes.EMOTIONS) {
+            var framework = ball.getFramework()
+            var ballIndex = framework.getIndex(ball)
+            var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
 
-        // determine move direction
-        var moveUp = touchState == TOUCHSTATES.BOTTOM
 
-        // determine move command
-        var moveValue = config.moveStepSize
-        if (!moveUp) {
-            moveValue *= -1
-        }
+            // determine move direction
+            var moveUp = touchState == TOUCHSTATES.BOTTOM
 
-        // TODO: update internal model
+            // determine move command
+            var moveValue = config.moveStepSize
+            if (!moveUp) {
+                moveValue *= -1
+            }
 
-        // will be zero if condition not fulfilled
-        if (moveValue != 0) {
-            syncedFrameworks.forEach((syncedFramework)=> {
-                syncedFramework.getMotorController().updatePosition(ballIndex, ball.getState(), moveValue)
-            })
+            // will be zero if condition not fulfilled
+            if (moveValue != 0) {
+                syncedFrameworks.forEach((syncedFramework)=> {
+                    syncedFramework.getMotorController().updatePosition(ballIndex, ball.getState(), moveValue, true)
+                })
+            }
+        } else {
+            console.error("moveHandler: You can not move a ball which is not in EMOTIONS mode")
         }
     }
 
@@ -274,11 +278,12 @@ class AmbientBallSystem {
         var ball = this.getObjectBySocketId(socketID)
         var syncedBalls = this.getSyncedObjectsById(ball.getId())
 
+        // TODO
         throw new Error("skinHandler not yet Implemented")
     }
 
 
-    touch_handler(touchState, socketID) {
+    touchHandler(touchState, socketID) {
         switch(touchState) {
             case TOUCHSTATES.TOP:
             case TOUCHSTATES.BOTTOM: 
@@ -293,28 +298,42 @@ class AmbientBallSystem {
         }
     }
 
-    updateBalls(ballList, mod) {
+
+    resetBall(ball, mode) {
         throw new Error("updateBalls: not yet implemented")
-        // todo: send ball state updates: blink, vibrate, color: depends on mod
+        // TODO: send ball state updates: blink, vibrate, color: depends on mod
         // update ball active state
+        switch(mode) {
+            default:
+            break
+        }
+    }
+
+    resetBalls(ballList, mode) {
+        ballList.forEach((ball) => {
+            this.resetBall(ball, mode)
+        })
     }
 
     // iterate over all ball changes and execute them
-    updateMotorController(moveValues, ballStates, motorController) {
+    updateMotorController(moveValues, ballStates, motorController, isActiveState) {
         for (var ballIndex=0; ballIndex < moveValues.length; ballIndex++) {
             if (moveValues[ballIndex] > 0) {
-                motorController.updatePosition(ballIndex, ballStates[ballIndex], moveValues[ballIndex])
+                motorController.updatePosition(ballIndex, ballStates[ballIndex], moveValues[ballIndex], isActiveState)
             }
         }
     }
 
-    changeMod_handler(socketID) {
+    changeModeHandler(socketID) {
         // incrementally changed
 
         // get relevant objects
         var motorController = this.getObjectBySocketId(socketID)
         var framework = motorController.getFramework()
         var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
+
+        // TODO: change mode
+        var mode =0
 
         var moveValues = []
         var ballStates = []
@@ -324,10 +343,9 @@ class AmbientBallSystem {
         // update frameworks
         syncedFrameworks.forEach((syncedFramework) => {
             // update ball positions
-            this.updateMotorController(moveValues, ballStates, syncedFramework.getMotorController())
+            this.updateMotorController(moveValues, ballStates, syncedFramework.getMotorController(), true)
 
-            // reset Balls to initial values per mode
-            resetBalls(syncedFramework.getBalls(), mode)
+            this.resetBalls(syncedFramework.getBalls(), mode)
         })
     }
 
@@ -335,10 +353,10 @@ class AmbientBallSystem {
         // create all events for the sockets
         
         // create room for all balls that are connected together
-        socket.on("touch", (touchState) => {this.touch_handler(touchState, socket.id)});
+        socket.on("touch", (touchState) => {this.touchHandler(touchState, socket.id)});
 
         // create room for all balls that are connected together
-        socket.on("changeMode", () =>{this.changeMod_handler(socket.id)})
+        socket.on("changeMode", () =>{this.changeModeHandler(socket.id)})
 
 
 
@@ -410,7 +428,7 @@ class AmbientBallSystem {
         if (distance != 0) {
             var controller = ball.getFramework().getMotorController()
             var ballIndex = ball.getFramework().getIndex(ball)
-            controller.updatePosition(ballIndex, ballState, distance)
+            controller.updatePosition(ballIndex, ballState, distance, ball.active_state == AmbientBallModes.SPORT)
             console.log("Ball Movement command: Distance: ", distance)
         }
 

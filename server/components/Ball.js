@@ -65,6 +65,10 @@ class BallState {
     setPosition(targetPosition) {
         this.position = targetPosition
     }
+
+    applyPositionChange(changeValue) {
+        return this.position.applyChange(changeValue)
+    }
 }
 
 
@@ -81,6 +85,23 @@ class Position {
     getPercentagePosition() {
         return this.pos
     }
+
+    applyChange(changeValue) {
+        var newPos = this.pos + changeValue
+
+        // boundary condition check
+        if (newPos > 1) {
+            newPos = 1
+        } else if (newPos < 0) {
+            newPos = 0
+        }
+        var adaptedChangeValue = newPos - this.pos
+        console.log(adaptedChangeValue, newPos, this.pos)
+        this.pos = newPos
+        
+
+        return adaptedChangeValue
+    }
 }
 
 const TOUCHSTATES = {
@@ -95,4 +116,5 @@ module.exports = {
     Ball: Ball, 
     TOUCHSTATES:TOUCHSTATES,
     Position:Position,
+    AmbientBallModes:AmbientBallModes,
 }
