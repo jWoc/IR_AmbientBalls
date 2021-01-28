@@ -113,11 +113,12 @@ class StravaSportsDataCollector{
 
 
 stravaCon = new StravaSportsDataCollector()
-var athlete1Token = "f6d0bf2f956be3bc66f082192c412760ee5df9a7"
+
+var athlete1Token = "45e062fc6d50088ebd0afd9b2ab039ec9c6ab973"
+var athlete2Token = "106cf69733f79698f9bb2c91b863c0698a109708"
+
 console.log("stats:")
-stravaCon.getSportsStatistics(athlete1Token)
+stravaCon.getSportsStatistics(athlete2Token)
     .then((stats) => {console.log(stats)})
 
-// get new access token (valid for 6 h)
-// command:
-// curl -X POST "https://www.strava.com/oauth/token" -F "client_id=59386" -F "client_secret=27d294934a5246889b33d591bf8818af2941a5b2" -F "refresh_token=fe5576ae90d96d619de120ce07ed9348a23c8a70" -F "grant_type=refresh_token"
+

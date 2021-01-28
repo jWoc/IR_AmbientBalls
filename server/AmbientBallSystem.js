@@ -13,6 +13,7 @@ class AmbientBallSystem {
 
     frameworks = []
 
+
     // mapper
     socketID_to_id = {} // map for later debug meesages {scoketID: ID}
     idToSyncedObjects = {}
@@ -23,7 +24,13 @@ class AmbientBallSystem {
     constructor(io) {
         this.io = io
         this.idToSyncedObjects = this.createSyncMapper()
-        // console.log(this.idToSyncedObjects)
+
+        
+        // trigger sports model updater
+        this.updateSportsModel()
+        this.sportsTimer = setInterval(() => {
+            this.updateSportsModel()
+        }, config.sporstUpdateIntervall)
     }
     
     createSyncMapper() {
@@ -125,7 +132,6 @@ class AmbientBallSystem {
 
     finish_initialization() {
         console.log("Finishing Initialization by creating Balls and motors")
-        console.log("Further sorting the input after the ids")
         
         // todo delete: sort by config on server: fixed sorting
         // this.sort_parameters();
@@ -372,7 +378,11 @@ class AmbientBallSystem {
     // example on how to send message
     message (userId, event, data) {
         io.sockets.to(userId).emit(event, data);
-      }
+    }
+
+    updateSportsModel() {
+        console.log(config.athletes)
+    }
 }
 
 module.exports = AmbientBallSystem
