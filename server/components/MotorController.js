@@ -37,13 +37,26 @@ class MotorController {
         return moveValue
     }
 
-    sendMoveCommand(moveValue, ballIndex) {
-        console.log("sendMoveCommand: ", moveValue, ballIndex)
+    updatePosition(ballIndex, ballState, moveValue) {
+        console.log("updatePosition: ", moveValue, ballIndex)
+
+
+        // TODO: Condition Check
+
+
+        // TODO: calculate steps from percentage
+        var calculatedSteps = 0
+
         var moveCommandValue = {
             targetBallIndex: ballIndex,
             moveValue: moveValue,
+            calculatedSteps: calculatedSteps,
         }
         this.socket.emit("setPosition", moveCommandValue)
+
+        // TODO: generate target Pos
+        // TODO: update internal model:
+        // ballState.setPosition(targetPos)
     }
 }
 

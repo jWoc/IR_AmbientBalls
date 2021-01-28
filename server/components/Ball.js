@@ -14,6 +14,10 @@ class Ball {
         this.state.push(new BallState(new Position(0), AmbientBallModes.TOUCH))
     }
 
+    getState() {
+        return this.state[this.active_state]
+    }
+
     getFramework() {
         return this.parentFramework
     }
@@ -57,6 +61,7 @@ class BallState {
     distance(targetPosition) {
         return this.position.distance(targetPosition)
     }
+
     setPosition(targetPosition) {
         this.position = targetPosition
     }

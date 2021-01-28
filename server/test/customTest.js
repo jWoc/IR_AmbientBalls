@@ -18,6 +18,7 @@ function createFakeSockets(socketID) {
         on: (message, handler) => {registerSocketEventFunction(socketID, message, handler)},
         use: (data) => {},
         eventNames: () => {},
+        emit: (message, data) => {console.log("socket send command triggered: ", message, data)},
         id: socketID,
     }
     socketDict[socketID] = fakeSocket;
@@ -57,7 +58,7 @@ system.add_client("Framework2_Ball5", "socketID_B10", true)
 system.add_client("Framework1_Controller", "socketID_C1", false)
 system.add_client("Framework2_Controller", "socketID_C2", false)
 
-// socketDict["socketID_B3"]["touch"](TOUCHSTATES.TOP)
+socketDict["socketID_B3"]["touch"](TOUCHSTATES.TOP)
 
 console.log("test finished");
 

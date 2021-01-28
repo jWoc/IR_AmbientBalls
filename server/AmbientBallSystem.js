@@ -254,14 +254,17 @@ class AmbientBallSystem {
         var moveUp = touchState == TOUCHSTATES.BOTTOM
 
         // determine move command
-        var moveValue = framework.getMotorController().calculateMoveDistance(ball, moveUp, config.moveStepSize)
+        var moveValue = config.moveStepSize
+        if (!moveUp) {
+            moveValue *= -1
+        }
 
         // TODO: update internal model
 
         // will be zero if condition not fulfilled
-        if (moveValue > 0) {
+        if (moveValue != 0) {
             syncedFrameworks.forEach((syncedFramework)=> {
-                syncedFramework.getMotorController().sendMoveCommand(moveValue, ballIndex)
+                syncedFramework.getMotorController().updatePosition(ballIndex, ball.getState(), moveValue)
             })
         }
     }
@@ -296,10 +299,11 @@ class AmbientBallSystem {
         // update ball active state
     }
 
-    updateMotorController(moveValues, motorController) {
+    // iterate over all ball changes and execute them
+    updateMotorController(moveValues, ballStates, motorController) {
         for (var ballIndex=0; ballIndex < moveValues.length; ballIndex++) {
             if (moveValues[ballIndex] > 0) {
-                motorController.sendMoveCommand(moveValues[ballIndex], ballIndex)
+                motorController.updatePosition(ballIndex, ballStates[ballIndex], moveValues[ballIndex])
             }
         }
     }
@@ -313,13 +317,14 @@ class AmbientBallSystem {
         var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
 
         var moveValues = []
-        // todo: get position changes for each ball
+        var ballStates = []
+        // TODO: get position changes + ball states of each ball
 
 
         // update frameworks
         syncedFrameworks.forEach((syncedFramework) => {
             // update ball positions
-            this.updateMotorController(moveValues, syncedFramework.getMotorController())
+            this.updateMotorController(moveValues, ballStates, syncedFramework.getMotorController())
 
             // reset Balls to initial values per mode
             resetBalls(syncedFramework.getBalls(), mode)
@@ -403,13 +408,10 @@ class AmbientBallSystem {
         var targetPos = new Position(targetPercentagePos)
         var distance = ballState.distance(targetPos)
         if (distance != 0) {
-            // TODO calculate steps
-            // TODO send command
-            // ball.message()
+            var controller = ball.getFramework().getMotorController()
+            var ballIndex = ball.getFramework().getIndex(ball)
+            controller.updatePosition(ballIndex, ballState, distance)
             console.log("Ball Movement command: Distance: ", distance)
-
-            // update internal model:
-            ballState.setPosition(targetPos)
         }
 
     }
