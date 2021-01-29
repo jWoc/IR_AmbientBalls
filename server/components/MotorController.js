@@ -21,25 +21,8 @@ class MotorController {
         return this.id
     }
 
-    calculateMoveDistance(ball, moveUp, moveStepSize) {
-        console.log("calculateMoveDistance: ", ball, moveUp, moveStepSize)
-        var moveValue = 0
-
-        // todo: generate Distance
-
-        if (!moveUp) {
-            moveValue *= -1
-        }
-
-        // todo: Constraint check current Position; adapt value or set zero
-
-
-        return moveValue
-    }
-
     updatePosition(ballIndex, ballState, moveValue, isActiveState) {
         console.log("updatePosition: ", moveValue, ballIndex)
-
 
         // move value can be changed by Condition Check
         var adaptedMoveValue = ballState.applyPositionChange(moveValue)

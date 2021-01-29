@@ -17,7 +17,7 @@ socket.on('go', function () {
 
 socket.on("requestID", () => {
     console.log("Request received Registering....")
-    socket.emit("registerID", "1", false); // your id you need to create a client and then switch the code here to false to create a controller client 
+    socket.emit("registerID", "Framework1_Ball1", false); // your id you need to create a client and then switch the code here to false to create a controller client 
 })
 // Create 3 clients and let them live even if you kill the server. Websockets are smart enough to reconnect again
 // See https://stackoverflow.com/questions/15509231/unit-testing-node-js-and-websockets-socket-io for unit tests

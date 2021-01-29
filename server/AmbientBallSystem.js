@@ -31,14 +31,6 @@ class AmbientBallSystem {
 
         // initiate Sports-API Connection
         this.sportsConnection = new StravaSportsDataCollector()
-
-        if (config.activateSportSync) {
-            // trigger sports model updater
-            this.updateSportsState()
-            this.sportsTimer = setInterval(() => {
-                this.updateSportsState()
-            }, config.sporstUpdateIntervall)
-        }
     }
     
     createSyncMapper() {
@@ -191,6 +183,16 @@ class AmbientBallSystem {
         // emit the go command
         // can just be broadcasted
         this.io.emit("go")
+
+
+        // activate sport synchronizer
+        if (config.activateSportSync) {
+            // trigger sports model updater
+            this.updateSportsState()
+            this.sportsTimer = setInterval(() => {
+                this.updateSportsState()
+            }, config.sporstUpdateIntervall)
+        }
     }   
 
     add_client(id, socketID, isBall) {
