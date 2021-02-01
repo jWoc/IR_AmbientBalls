@@ -39,8 +39,7 @@ void loop() {
         Serial.print("[HTTP] begin...\n");
       
         // configure server and url
-        http.begin("http://jsonplaceholder.typicode.com/comments?id=10"); //HTTP
-        //http.begin("http://localhost:8080/comments?id=1");  // localhost, desired url
+        http.begin("http://localhost:8080/");  // desired url, instead of localhost -> give the ip of the system where the server is running 
       
         Serial.print("[HTTP] GET...\n");
         // start connection and send HTTP header
