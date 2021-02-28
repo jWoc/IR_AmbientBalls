@@ -14,6 +14,8 @@
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient socketIO;
 
+const char[] id = "Framework1_Ball1";
+
 void event(const char * payload, size_t length) {
   USE_SERIAL.printf("got message: %s\n", payload);
 }
@@ -40,7 +42,7 @@ void setup() {
     }
 
     socketIO.on("event", event);
-
+    socketIO.on("requestID", sendID);
     socketIO.on("go", startOperation); // function to execute once all balls are connected
     socketIO.begin("192.168.178.111", 3000);
     // use HTTP Basic Authorization this is optional remove if not needed
@@ -48,6 +50,16 @@ void setup() {
 }
 
 //touch up, touch down, touch both
+void sendID(const char * payload, size_t event) {
+    socketIO.emit("registerID", id);
+}
+
+void start(const char * payload, size_t event) {
+    // Start listening for these events
+    socketIO.on("setPosition", setPosition);
+    socketIO.on("callibrate", callibrate); // TODO do send the command or do we just sent positions from the server
+}
+
 
 void switchcolor(const char* payload, size_t len)
 { 
