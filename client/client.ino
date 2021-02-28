@@ -10,6 +10,7 @@
 #include <Hash.h>
 #define USE_SERIAL Serial
 
+
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient socketIO;
 
@@ -39,11 +40,49 @@ void setup() {
     }
 
     socketIO.on("event", event);
+
+    socketIO.on("go", startOperation); // function to execute once all balls are connected
     socketIO.begin("192.168.178.111", 3000);
     // use HTTP Basic Authorization this is optional remove if not needed
     //webSocket.setAuthorization("username", "password");
 }
 
+//touch up, touch down, touch both
+
+void switchcolor(const char* payload, size_t len)
+{ 
+  // TO DO - check the led circuit connection
+  }
+
+void setVibration(const char* payload, size_t len)
+{ 
+  }
+
+void switchLED(const char* payload, size_t len)
+{ 
+  }
+
+void startOperation(const char* payload, size_t len)
+{ 
+    USE_SERIAL.print("Received go command \n");
+    USE_SERIAL.println(payload); 
+    socketIO.on("SetColor", switchColor); // function 1
+    socketIO.on("SetVibration", setVibration); //function 2
+    socketIO.on("SetBlinking", switchLED); // function 3
+  }  
+
+
+void checkLEDstate()
+{
+  
+  }   
+
+void checkTouchState()
+{
+  // Sensor touch - digital out to indicate whether sensor is touched or not , top/bottom/both
+  }  
+
 void loop() {
     socketIO.loop();
+    checkTouchState();
 }
