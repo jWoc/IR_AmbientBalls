@@ -23,9 +23,9 @@ io.on('connection', (socket) => {
         console.log(socket.id)
       })
 
-      socket.on('registerID', (id, isBall) => {
-        console.log(id, isBall)
-        system.add_client(id, socket.id, isBall)
+      socket.on('registerID', (data) => { // data is now a json objectb 
+        console.log(data.id, data.isBall)
+        system.add_client(data.id, socket.id, data.isBall)
         // call my own function isBall specifys if it is a ball or a motror
 
     })
