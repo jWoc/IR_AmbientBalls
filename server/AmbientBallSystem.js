@@ -219,7 +219,7 @@ class AmbientBallSystem {
         console.log("client registered: " + id)
 
         // check if all clients connected
-        if ((this.allBallParameters.length + (2*this.allControllerParameters.length)) == Object.keys(this.idToSyncedObjects).length) {
+        if ((this.allBallParameters.length + this.allControllerParameters.length) == (config.frameworks.length * (1+config.frameworks[0].orderedBallIds.length))) {
             console.log("call finish_intialization\n");
             this.finish_initialization()
         }

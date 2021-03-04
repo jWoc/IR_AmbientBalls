@@ -1,14 +1,8 @@
 
 config = {
-    // should be a json file 
-    // Needs to be given to the constructors
-    ballsPerFramework:  5,
-    minFrameworks: 2,
 
     // ball Movement
     moveStepSize: 10/100,
-
-    testMode: false,
 
     sporstUpdateIntervall: 5000, // miliseconds
     activateSportSync: true,
@@ -59,18 +53,6 @@ config = {
             ],
         },
     ],
-
-
-    sportsUsers:  [
-        {   name: "Johannes Wocker", 
-            id: "asdfmasdoifasdfsdfasfo",
-        },
-    ],
-}
-
-if (config.testMode) {
-    config.ballsPerFramework = 1
-    config.minFrameworks = 1
 }
 
 module.exports = config
