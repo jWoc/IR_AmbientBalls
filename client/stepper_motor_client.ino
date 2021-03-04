@@ -7,35 +7,35 @@
 
 #include <WebSocketsClient.h>
 #include <SocketIOclient.h>
-
+#include <Stepper.h>
 #include <Hash.h>
 
 ESP8266WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
 
-#define USE_SERIAL Serial1
+#define USE_SERIAL Serial
 
 const int pinButton = 0; // Used for the button, number is the Pin we connect to
 
 bool started = false; // used to control if we can press button
 
-const char[] id = "Framework2_Controller";
+const char id[] = "Framework2_Controller";
 // Define Stepper constants
 const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
 // for your motor
 
 // 5 steppers for 5 balls
-Stepper stepper0(stepsPerRevolution, 8, 9, 10, 11);
+/*Stepper stepper0(stepsPerRevolution, 8, 9, 10, 11);
 Stepper stepper1(stepsPerRevolution, 8, 9, 10, 11);
 Stepper stepper2(stepsPerRevolution, 8, 9, 10, 11);
 Stepper stepper3(stepsPerRevolution, 8, 9, 10, 11);
 Stepper stepper4(stepsPerRevolution, 8, 9, 10, 11);
 
 // for easy indexing
-const Stepper steppers[] = {stepper0, stepper1, stepper2, stepper3, stepper4};
+Stepper steppers[] = {stepper0, stepper1, stepper2, stepper3, stepper4};
+*/
 
-
-void sendID(const char * payload, size_t event) {
+void sendID() {
     // creat JSON message for Socket.IO (event)
     DynamicJsonDocument doc(1024);
     JsonArray array = doc.to<JsonArray>();
@@ -48,7 +48,7 @@ void sendID(const char * payload, size_t event) {
     JsonObject param1 = array.createNestedObject();
     JsonObject param2 = array.createNestedObject();
     param1["id"] = id;
-    param2["isBall"] = true;
+    param2["isBall"] = false;
     
     // JSON to String (serializion)
     String output;
@@ -63,15 +63,12 @@ void start() {
     started = true;
 }
 
-void setPosition(const char * payload) {
-    // We need to check that inside the payload we have a number to specify which stepper mototr 
+void setPosition(int id, int position) {
 
-    // 1. Extract the stepper number from the payload and the position
-    int step_num = 0;
-    Stepper stepper = steppers[step_num];
-    // maybe conversion of position
-    int placeholder = 200;
-    stepper.step(placeholder); // negative number is counterclockwise 
+    //Stepper stepper = steppers[id];
+    
+    //stepper.step(position); // negative number is counterclockwise 
+    return;
 }
 
 void callibrate() {
@@ -79,14 +76,13 @@ void callibrate() {
     // TODO How is the stepper motot behaving when ball is reaching top position?
 }
 
+uint64_t last_pressed = 0; // used to delay button signal 
 void checkButtonState() {
     // 
     // Condtion if we detected that the button is pressed
     if (digitalRead(pinButton)) { // we read a 1 and not a 0
-    // Create Json object
-        socketIO.sendEvent("ChangeMode");
-        // If the button is pressed we want to sleep for a second to not spam the server with changeMode events
-        delay(1000); 
+        socketIO.sendEVENT("ChangeMode");
+        last_pressed = millis();
     }
 }
 
@@ -127,12 +123,22 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
             }
             else if(strcmp(eventName.c_str(), "setPosition") == 0)
             { 
-                // TODO we need to parse payload argument from doc here
-                setPosition()                
+              if (doc.size() != 2) {
+                    Serial.printf("Received wrong number of arguments, size was %d", doc.size());
+                    break;
+                }
+              if (!doc[1].containsKey("position") || !doc[1].containsKey("id")) {
+                    Serial.println("Argument does not have key position or id, Breaking");
+                    break;
+              }
+              // let ids be numbers 0 to 4 to specify the stepper motor that should be used (server decides which one so be careful of mapping
+              int position = doc[1]["position"]; 
+              int id = doc[1]["id"];
+              setPosition(id, position);                
             }
             else if(strcmp(eventName.c_str(), "callibrate") == 0)
             { 
-                callibrate()               
+                callibrate();               
             }    
         }
             break;
@@ -163,13 +169,12 @@ void setup() {
     USE_SERIAL.setDebugOutput(true);
 
     // Pin intitlaizations
-    pinMode(pinButton, INPUT); // specify that Pin used is INPUT so we receive data
-
+    //pinMode(pinButton, INPUT); // specify that Pin used is INPUT so we receive data
 
     // set the speed at 60 rpm for all stepper motors
-    for (int i = 0; i < 5; i++) {
-        steppers[i].setSpeed(60);
-    }
+    //for (int i = 0; i < 5; i++) {
+    //    steppers[i].setSpeed(60);
+    //}
 
     USE_SERIAL.println();
     USE_SERIAL.println();
@@ -186,7 +191,7 @@ void setup() {
         WiFi.softAPdisconnect(true);
     }
 
-    WiFiMulti.addAP("Internet-QI-119", "QI.W-LAN!neu*23072019");
+    WiFiMulti.addAP("blabla", "blabal");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
@@ -196,46 +201,21 @@ void setup() {
     USE_SERIAL.printf("[SETUP] WiFi Connected %s\n", ip.c_str());
 
     // server address, port and URL
-    socketIO.begin("192.168.178.111", 3000);
+    socketIO.begin("192.168.1.152", 3000);
 
     // event handler
     socketIO.onEvent(socketIOEvent);
 }
 
-unsigned long messageTimestamp = 0;
+
 
 void loop() {
-    socketIO.loop();
-    if (started) {
-        checkButtonState(); // Now dependent if we want to receive events all 200ms or inside button
-    }
-
     uint64_t now = millis();
-
-    if(now - messageTimestamp > 2000) {
-        messageTimestamp = now;
-
-        // creat JSON message for Socket.IO (event)
-        DynamicJsonDocument doc(1024);
-        JsonArray array = doc.to<JsonArray>();
-        
-        // add evnet name
-        // Hint: socket.on('event_name', ....
-        array.add("event_name");
-
-        // add payload (parameters) for the event
-        JsonObject param1 = array.createNestedObject();
-        param1["now"] = (uint32_t) now;
-
-        // JSON to String (serializion)
-        String output;
-        serializeJson(doc, output);
-
-        // Send event        
-        socketIO.sendEVENT(output);
-
-        // Print JSON for debugging
-        USE_SERIAL.println(output);
+    socketIO.loop();
+    
+    if (started) {
+        if(now - last_pressed > 200) {// we dont want to spam the server if you press the button for to long
+        checkButtonState(); // Now dependent if we want to receive events all 200ms or inside button
+        }
     }
 }
-
