@@ -5,6 +5,7 @@ const TOUCHSTATES = BallDef.TOUCHSTATES
 const Position = BallDef.Position
 const AmbientBallModes = BallDef.AmbientBallModes
 const StravaSportsDataCollector = require("./api/strava")
+const { io } = require('socket.io-client')
 
 
 // TODO we need to handle when we lose a  client 
@@ -351,6 +352,7 @@ class AmbientBallSystem {
         })
     }
 
+
     add_events_balls(socket) {
         // create all events for the sockets
         
@@ -359,7 +361,15 @@ class AmbientBallSystem {
 
         // create room for all balls that are connected together
         socket.on("changeMode", () =>{this.changeModeHandler(socket.id)})
+        
+        // All of these are internals that will be called by eg change mode
+        // These events shoudl be emited and then catched on the hardware site
+        // Also all values depend on how hardware wants to receive the data
+        socket.on("setColor", () => {} )
 
+        socket.on("setVibration", () => {})
+
+        socket.on("setBlinking", () => {})
 
 
         socket.on("test", () => {
@@ -392,6 +402,11 @@ class AmbientBallSystem {
 
     add_events_controller(socket) {
         // create all events for the sockets in here
+        
+        socket.on("callibrate", () => {})
+
+        socket.on("setPosition", () => {})
+
 
         socket.on("testConroller", () => {
             console.log("test called")
@@ -410,6 +425,11 @@ class AmbientBallSystem {
     // example on how to send message
     message (userId, event, data) {
         io.sockets.to(userId).emit(event, data);
+    }
+
+    // Used for logging format the msg as in socket.use code
+    log(msg) {
+        io.emit("server message", msg)
     }
 
     updateAthleteState(athlete, stats) {
