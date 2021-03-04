@@ -5,6 +5,10 @@
 #include <WebSocketsClient.h>
 #include <SocketIOclient.h>
 #include <Hash.h>
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+ #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#endif
 
 ESP8266WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
@@ -12,6 +16,27 @@ SocketIOclient socketIO;
 const char id[] = "Framework1_Ball1";
 
 bool started = false;
+// For led control
+bool blinking = false;
+bool led_on = false; // this is only used for blinking not for actual setColor (since the led should always be on
+unsigned long messageTimestamp = 0;
+const long blink_interval = 1000; // in ms
+unsigned long prev_millis = 0;
+
+// Which pin on the Arduino is connected to the NeoPixels?
+#define LEDPIN        6 
+#define TOUCHPIN      9
+#define VIBPIN        10 // vibration motor
+
+// How many NeoPixels are attached to the Arduino?
+#define NUMPIXELS 16 //
+
+// When setting up the NeoPixel library, we tell it how many pixels,
+// and which pin to use to send signals.
+Adafruit_NeoPixel pixels(NUMPIXELS, LEDPIN, NEO_GRB + NEO_KHZ800);
+
+#define DELAYVAL 500 // Time (in milliseconds) to pause between pixels
+
 
 //touch up, touch down, touch both
 void sendID(/*const char * payload, size_t event*/) {
@@ -39,26 +64,39 @@ void sendID(/*const char * payload, size_t event*/) {
     
 }
 
-void switchcolor(/*const char* payload, size_t len*/)
+void switchcolor(int r, int g, int b)
 { 
   // TO DO - check the led circuit connection
-  }
+  // value range is between 0 and 255 3 values RGB format  
+  // we could use fill command
+  for(int i=0; i<NUMPIXELS; i++) { // For each pixel...
 
-void setVibration(/*const char* payload, size_t len*/)
+    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+    // Here we're using a moderately bright green color:
+    pixels.setPixelColor(i, pixels.Color(r, g, b));
+
+    pixels.show();   // Send the updated pixel colors to the hardware.
+
+    delay(DELAYVAL); // Pause before next pass through loop
+  }
+}
+
+void setVibration(int strength)
 { 
+  // If I read correctly we set vib motor with analogWrite (for PWM) this is a value between 0 and 255 (max is dependent on the current
+  // so for a ramp up effect we would call analogWrite in a loop
+  // for other effects we need to send additional data or create new functions we could also say that we ramp up
+  analogWrite(VIBPIN, strength);
   }
 
-void switchLED(/*const char* payload, size_t len*/)
-{ 
-  }
 
-void startOperation(/*const char* payload, size_t len*/)
+void startOperation()
 { 
     Serial.print("Received go command \n");
     started = true;
     //Serial.println(payload); 
 
-  } 
+} 
 
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
     switch(type) {
@@ -73,10 +111,6 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
             break;
         case sIOtype_EVENT:
                // Start listening for these events
-                       
-                //  socketIO.on("SetColor", switchColor); // function 1
-                //  socketIO.on("SetVibration", setVibration); //function 2
-                //  socketIO.on("SetBlinking", switchLED); // function 3
             {
             Serial.printf("[IOc] get event: %s\n", payload);
             DynamicJsonDocument doc(1024);
@@ -88,23 +122,45 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
             }
             String eventName = doc[0];
             Serial.printf("[IOc] event name: %s\n", eventName.c_str());
-      
+            serializeJson(doc, Serial);
               if(strcmp(eventName.c_str(), "requestID") == 0)
               {
-                Serial.print("inside case");
                 sendID();
-                }
-              else if(strcmp(eventName.c_str(), "SetColor") == 0 ) 
+              }
+              else if(strcmp(eventName.c_str(), "setColor") == 0 ) 
                {
-                    switchcolor();
+                    if (doc.size() != 2) {
+                      Serial.printf("Received wrong number of arguments, size was %d", doc.size());
+                      break;
+                    }
+                    if (!doc[1].containsKey("rgb")) {
+                      Serial.println("Argument does not have key rgb, Breaking");
+                      break;
+                    }
+                    JsonArray v= doc[1]["rgb"]; // get the key from the object returns an array for 3 values if ke does not exist it does not throw an error
+                    int r = v[0]; // implicit type convwersion happens here ote that we dont check the range
+                    int g = v[1];
+                    int b = v[2];
+                    switchcolor(r, g, b);
                }
               else if(strcmp(eventName.c_str(), "SetVibration") == 0)  
                {     
-                    setVibration();
+                    if (doc.size() != 2) {
+                      Serial.printf("Received wrong number of arguments, size was %d", doc.size());
+                      break;
+                    }
+                    if (!doc[1].containsKey("strength")) {
+                      Serial.println("Argument does not have key strength, Breaking");
+                      break;
+                    }
+                    int strength = doc[1]["strength"];
+                    setVibration(strength);
                }
               else if(strcmp(eventName.c_str(), "SetBlinking") == 0)
                { 
-                    switchLED();                     
+                    blinking = true;
+                    prev_millis = millis(); // since if turned off it still runs and then now and prev are out of synv      
+                    led_on = false; // so they will turn on at start         
                }  
 
                else if(strcmp(eventName.c_str(), "go") == 0)
@@ -149,7 +205,7 @@ void setup() {
         WiFi.softAPdisconnect(true);
     }
 
-    WiFiMulti.addAP("Internet-QI-119", "QI.W-LAN!neu*23072019");
+    WiFiMulti.addAP("Xavannah-Club", "19961995");
 
     //WiFi.disconnect();
     while(WiFiMulti.run() != WL_CONNECTED) {
@@ -160,31 +216,58 @@ void setup() {
     Serial.printf("[SETUP] WiFi Connected %s\n", ip.c_str());
 
     // server address, port and URL
-    socketIO.begin("192.168.178.111", 3000);
-
+    socketIO.begin("192.168.1.152", 3000);
+    
+    // LED stuff
+    pixels.begin(); // init for pixels
+    // pixels.set_brightness()
+    pixels.show(); // intis all to off
+    
     // event handler
     socketIO.onEvent(socketIOEvent);
 }
 
 
-void checkLEDstate()
-{
-  
-}   
-
 void checkTouchState()
 {
   // Sensor touch - digital out to indicate whether sensor is touched or not , top/bottom/both
+  // Check how we wanto to send data
 } 
 
-unsigned long messageTimestamp = 0;
+void switchLED() {
+  // depending on state turn the stripe on or off
+  int val;
+  if(led_on) {
+    val = 0;
+  }
+  else {
+    val = 255;
+  }
+  led_on = !led_on; // switch the state
+  
+  for(int i=0; i<NUMPIXELS; i++) { // For each pixel...
+    pixels.fill(i, val); // fill uses val for r g b 
+  }
+  pixels.show();   // Send the updated pixels colors to the hardware.
+  
+}
+
+
 void loop() {
     socketIO.loop();
-    if(started){
-    checkTouchState();}
-
     uint64_t now = millis();
+    
+    if(started) {
+    checkTouchState();
+    }
 
+    if (blinking) {
+      // we blink in an interval
+      if (now - prev_millis >= blink_interval) {
+        prev_millis = now;
+        switchLED();
+      }
+    }
     if(now - messageTimestamp > 2000) {
         messageTimestamp = now;
 
