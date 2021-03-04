@@ -23,9 +23,9 @@ io.on('connection', (socket) => {
         console.log(socket.id)
       })
 
-      socket.on('registerID', (data) => { // data is now a json objectb 
-        console.log(data.id, data.isBall)
-        system.add_client(data.id, socket.id, data.isBall)
+      socket.on('registerID', ({id : name}, {isBall : val}) => { // data is now a json objectb 
+        console.log(name, val) // actually parses isBall to bool
+        system.add_client(name, socket.id, val)
         // call my own function isBall specifys if it is a ball or a motror
 
     })
@@ -33,7 +33,7 @@ io.on('connection', (socket) => {
 
   });
 
-http.listen(3000, () => {
+http.listen(3000, "0.0.0.0", () => { // now on chips just specify the address f the computer ruinning the serverS
   console.log('listening on *:3000');
 });
 
