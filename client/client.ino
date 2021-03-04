@@ -25,8 +25,9 @@ unsigned long prev_millis = 0;
 
 // Which pin on the Arduino is connected to the NeoPixels?
 #define LEDPIN        6 
-#define TOUCHPIN      9
-#define VIBPIN        10 // vibration motor
+#define TOUCHPINTOP   9
+#define TOUCHPINBOT   10
+#define VIBPIN        11 // vibration motor
 
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS 16 //
@@ -39,7 +40,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LEDPIN, NEO_GRB + NEO_KHZ800);
 
 
 //touch up, touch down, touch both
-void sendID(/*const char * payload, size_t event*/) {
+void sendID() {
        
        // creat JSON message for Socket.IO (event)
         DynamicJsonDocument doc(1024);
@@ -194,6 +195,8 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
 void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
+
+    // define PINS as input
       for(uint8_t t = 4; t > 0; t--) {
           Serial.printf("[SETUP] BOOT WAIT %d...\n", t);
           Serial.flush();
@@ -230,23 +233,35 @@ void setup() {
 
 void checkTouchState()
 {
+  int pressureTop = analogRead(TOUCHPINTOP); // val between 0 and 1023
+  int pressureBot = analogRead(TOUCHPINBOT);
+
+  // For now we just have one threshold pressed or not pressed but we could detect light toucvh medium touch etc
+  if(pressureTop < 10 && pressureBot < 10) {
+    return;
+  }
+
+  String location = "";
+  if(pressureTop >= 10 && pressureBot >= 10) {
+    location = "Both";
+  }
+  else if(pressureTop >= 10) {
+    location = "Top";
+  }
+  else if(pressureBot >= 10) {
+    location = "Bot";
+  }
   // Sensor touch - digital out to indicate whether sensor is touched or not , top/bottom/both
   // Check how we wanto to send data
   DynamicJsonDocument doc(1024);
   JsonArray array = doc.to<JsonArray>();
-  String location = "";
-  // Now in if check all locations
-
   
-  // add event name
-  // Hint: socket.on('event_name', ....
   array.add("touch");
 
   // add payload (parameters) for the event
   JsonObject param1 = array.createNestedObject();
-  param1["where"] = "Top"; // possivle values dependent on what si pressedBottom Both Top
+  param1["location"] = location; // possivle values dependent on what si pressedBottom Both Top
 
-  // JSON to String (serializion)
   String output;
   serializeJson(doc, output);
 
@@ -276,41 +291,18 @@ void switchLED() {
 void loop() {
     socketIO.loop();
     uint64_t now = millis();
-    
-    if(started) {
-    checkTouchState();
+    if (now - messageTimestamp > 200) { // we check the state of teh buttons every 200ms
+      messageTimestamp = now;
+      if(started) {
+        checkTouchState();
+      }
     }
-
+    
     if (blinking) {
       // we blink in an interval
       if (now - prev_millis >= blink_interval) {
         prev_millis = now;
         switchLED();
       }
-    }
-    if(now - messageTimestamp > 2000) {
-        messageTimestamp = now;
-
-        // creat JSON message for Socket.IO (event)
-        DynamicJsonDocument doc(1024);
-        JsonArray array = doc.to<JsonArray>();
-        
-        // add event name
-        // Hint: socket.on('event_name', ....
-        array.add("Touch");
-
-        // add payload (parameters) for the event
-        JsonObject param1 = array.createNestedObject();
-        param1["now"] = (uint32_t) now;
-
-        // JSON to String (serializion)
-        String output;
-        serializeJson(doc, output);
-
-        // Send event        
-        socketIO.sendEVENT(output);
-
-        // Print JSON for debugging
-        Serial.println(output);
     }
 }
