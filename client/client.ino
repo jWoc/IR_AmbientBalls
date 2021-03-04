@@ -205,7 +205,7 @@ void setup() {
         WiFi.softAPdisconnect(true);
     }
 
-    WiFiMulti.addAP("Xavannah-Club", "19961995");
+    WiFiMulti.addAP("blabla", "blabla");
 
     //WiFi.disconnect();
     while(WiFiMulti.run() != WL_CONNECTED) {
@@ -218,10 +218,10 @@ void setup() {
     // server address, port and URL
     socketIO.begin("192.168.1.152", 3000);
     
-    // LED stuff
-    pixels.begin(); // init for pixels
+    // LED stuff activate when connected
+    //pixels.begin(); // init for pixels
     // pixels.set_brightness()
-    pixels.show(); // intis all to off
+    //pixels.show(); // intis all to off
     
     // event handler
     socketIO.onEvent(socketIOEvent);
@@ -232,6 +232,26 @@ void checkTouchState()
 {
   // Sensor touch - digital out to indicate whether sensor is touched or not , top/bottom/both
   // Check how we wanto to send data
+  DynamicJsonDocument doc(1024);
+  JsonArray array = doc.to<JsonArray>();
+  String location = "";
+  // Now in if check all locations
+
+  
+  // add event name
+  // Hint: socket.on('event_name', ....
+  array.add("touch");
+
+  // add payload (parameters) for the event
+  JsonObject param1 = array.createNestedObject();
+  param1["where"] = "Top"; // possivle values dependent on what si pressedBottom Both Top
+
+  // JSON to String (serializion)
+  String output;
+  serializeJson(doc, output);
+
+  // Send event        
+  socketIO.sendEVENT(output);
 } 
 
 void switchLED() {
