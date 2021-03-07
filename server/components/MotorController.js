@@ -1,4 +1,4 @@
-
+const config = require('../config');
 
 class MotorController {
 
@@ -21,19 +21,21 @@ class MotorController {
         return this.id
     }
 
-    updatePosition(ballIndex, ballState, moveValue, isActiveState) {
+    updatePosition(ballIndex, ballState, moveValue, isActiveState, changeMode = false) {
         console.log("updatePosition: ", moveValue, ballIndex)
 
         // move value can be changed by Condition Check
-        var adaptedMoveValue = ballState.applyPositionChange(moveValue)
+        var adaptedMoveValue = moveValue;
+        if (!changeMode) {
+            adaptedMoveValue = ballState.applyPositionChange(moveValue);
+        }
+
 
         if ((adaptedMoveValue != 0) && isActiveState) {
-            // TODO: calculate steps from percentage (adaptedMoveValue)
-            var calculatedSteps = 0
-
+            var calculatedSteps = Math.round(adaptedMoveValue * config.maxStepCount); //Steps you need from top to bottom
+            
             var moveCommandValue = {
-                targetBallIndex: ballIndex,
-                moveValue: adaptedMoveValue,
+                id: ballIndex,
                 calculatedSteps: calculatedSteps,
             }
             this.socket.emit("setPosition", moveCommandValue)

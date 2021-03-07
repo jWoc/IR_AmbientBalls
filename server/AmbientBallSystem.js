@@ -1,4 +1,5 @@
 const config = require('./config')
+const Color = require('color')
 const Framework = require("./components/Framework")
 const BallDef = require("./components/Ball")
 const TOUCHSTATES = BallDef.TOUCHSTATES
@@ -265,22 +266,97 @@ class AmbientBallSystem {
                 moveValue *= -1
             }
 
-            // will be zero if condition not fulfilled
-            if (moveValue != 0) {
-                syncedFrameworks.forEach((syncedFramework)=> {
-                    syncedFramework.getMotorController().updatePosition(ballIndex, ball.getState(), moveValue, true)
-                })
-            }
+
+            syncedFrameworks.forEach((syncedFramework)=> {
+                syncedFramework.getMotorController().updatePosition(ballIndex, ball.getState(), moveValue, true)
+            })
+
         } else {
             console.error("moveHandler: You can not move a ball which is not in EMOTIONS mode")
         }
     }
 
-    skinHandler(socketID) {
+    changeSkinBall_notifyTouched_setBallTouched(ball) {
+        var ballState = ball.getState();
+        ballState.blink = false;
+        ballState.vibrate = false;
+        this.message(ball.socketID, "setBlinking", {start: ballState.blink} );
+        this.message(ball.socketID, "setVibrating", {start: ballState.vibrate} );
+    }
+
+    changeSkinBall_notifyTouched_setBallUnTouched(ball) {
+        var untouchedState = ball.getState();
+        untouchedState.blink = true;
+        untouchedState.vibrate = true;
+        this.message(untouchedBall.socketID, "setBlinking", {start: untouchedState.blink} );
+        this.message(untouchedBall.socketID, "setVibrating", {start: untouchedState.vibrate} );
+    }
+
+
+
+    changeBallColors(ballList, color) {
+        ballList.forEach(ball => this.message(ball.socketID, "setColor", {rgb: color.rgb().array()}))
+    }   
+
+    skinHandler(newTouchState, socketID) {
         // get relevant objects
         var ball = this.getObjectBySocketId(socketID)
         var syncedBalls = this.getSyncedObjectsById(ball.getId())
 
+        if (ball.active_state === AmbientBallModes.TOUCH) {
+
+            var ballState = ball.getState();
+            var oldTouchState = ball.getState().touch;
+            ballState.touch = newTouchState;
+            var notTouchedBalls = syncedBalls.filter(ball => ball.getState().touch != TOUCHSTATES.BOTH);
+
+            //console.log(syncedBalls.length)
+            //console.log(notTouchedBalls.length)
+            // 2 special cases
+            if (oldTouchState != newTouchState && newTouchState === TOUCHSTATES.NOTHING) {
+                // we remove hand
+                // a ) no ball is touched
+                // b) there are some that are still touched then your own should start blinking
+                // c) there are some still touched and all were touched so we need to change color                 
+
+                if (notTouchedBalls.length == 1) { // c) there are still some touched
+                    this.changeBallColors(syncedBalls, ball.modeToColor()) // modeToColor is default color
+                    this.changeSkinBall_notifyTouched_setBallUnTouched(notTouchedBalls[0]); // ball should now vobrate
+                }
+
+                else if (notTouchedBalls.length == syncedBalls.length) { // a
+                    notTouchedBalls.forEach(ball1 => this.resetBall(ball1));
+                }
+                else { // b
+
+                    notTouchedBalls.forEach(ball1 => this.changeSkinBall_notifyTouched_setBallUnTouched(ball1));
+
+                    
+                }
+            }
+            else if (oldTouchState != TOUCHSTATES.BOTH && newTouchState === TOUCHSTATES.BOTH) { // was not touched before from both sides
+                // cases (so ball will be touched)
+                // a) all are now touched
+                // b) some are still not touched
+
+                // reset blinking and vibrating of the ball that is now touched
+                if (notTouchedBalls.length == 0) { // a)
+                    console.log("Case a) when you start touching. All touched")
+                    this.changeBallColors(syncedBalls, Color("rgb(139,0,0)"));
+                    this.changeSkinBall_notifyTouched_setBallTouched(ball); // stop vibrating
+                }
+                else { // b)
+                    this.changeSkinBall_notifyTouched_setBallTouched(ball);
+                }
+            }
+            else {
+                console.log("SkinHandler error. Good Luck. newTouchState was: " + newTouchState + "and oldTouchstate was: " + oldTouchState);
+            }
+
+        }
+        else {
+            console.log("If not in Touch mode pressing both sides has no effect");
+        }
         // TODO
         // 1 Check if both balls are in the touch state right now (otherwise nothing hppens)
         // Check if ypur own ball is in tpuched red color (that pulses)
@@ -290,7 +366,7 @@ class AmbientBallSystem {
         // 3.2 If touched from both sides change vibrating and stop blinking 
         // 3.3 Now vibration should pulse (shoulc be maybe controlled on client that we staarted it )
         // Now if one of them leaves repeat to 2
-        throw new Error("skinHandler not yet Implemented")
+
     }
 
     convert_touchstate(touch_str) {
@@ -303,6 +379,9 @@ class AmbientBallSystem {
         else if (touch_str === "Both") {
             return TOUCHSTATES.BOTH
         }
+        else if (touch_str === "Nothing") {
+            return TOUCHSTATES.NOTHING;
+        }
         else {
             console.log("The touchState" + touch_str + "that was sent from the ball does not work")
         }
@@ -310,50 +389,52 @@ class AmbientBallSystem {
 
     touchHandler(touchState, socketID) {
 
-        var touchState = convert_touchstate(touchState) // convert touchState since it is just a string to the enum
+        var touchState = this.convert_touchstate(touchState) // convert touchState since it is just a string to the enum
         switch(touchState) {
             case TOUCHSTATES.TOP:
             case TOUCHSTATES.BOTTOM: 
                     this.moveHandler(touchState, socketID)
                 break;
             case TOUCHSTATES.BOTH: 
-                    this.skinHandler(socketID)
+            case TOUCHSTATES.NOTHING: // if nothing is pressed
+                    this.skinHandler(touchState, socketID)
                 break;
-            default: 
+            default:
                 throw new Error("Touch event \"" + touchState + "\" should not be received on the server")
                 break;
         }
     }
 
+    resetBall(ball) {
+        var ballState = ball.getState();
+        ballState.color = ballState.modeToColor(); // reset color (can happen if we are in touch case)
+        ballState.blink = false;
+        ballState.vibrate = false;
+        this.message(ball.socketID, "setColor", {rgb: ballState.color.rgb().array()});
+        this.message(ball.socketID, "setBlinking", {start: ballState.blink});
+        this.message(ball.socketID, "setVibrating", {start: ballState.vibrate});
+    }
 
     applyState(ball) {
-        throw new Error("updateBalls: not yet implemented")
         var next_mode = ball.next_active_mode()
-
-        // set and get the next active state
         ball.active_state = next_mode;
         var ballState = ball.getState();
-        // Not sure for blinking and vibration we just send the event and handle it as boolean
-        this.message(ball.socketID, "setColor", {rgb: ballState.color.rgb().array()});
-        // Vibration and blinking should send a field if we should start or stop vibrating / blinking
-        this.message(ball.socketID, "setBlinking", {start: ball.blink, rgb: [255,0,0]});
-        this.message(ball.socketID, "setVibrating", {start: ball.})
-        // Now get the state from there 
-        // TODO: send ball state updates: blink, vibrate, color: depends on mod
-        // update ball active state
+        this.resetBall(ball);
+        
+
     }
 
     applyNextStates(ballList) {
         ballList.forEach((ball) => {
-            this.applyState(ball, mode)
+            this.applyState(ball)
         })
     }
 
     // iterate over all ball changes and execute them
-    updateMotorController(moveValues, ballStates, motorController, isActiveState) {
+    updateMotorController(moveValues, motorController, isActiveState) {
         for (var ballIndex=0; ballIndex < moveValues.length; ballIndex++) {
             if (moveValues[ballIndex] > 0) {
-                motorController.updatePosition(ballIndex, ballStates[ballIndex], moveValues[ballIndex], isActiveState)
+                motorController.updatePosition(ballIndex, null, moveValues[ballIndex], isActiveState, true)
             }
         }
     }
@@ -366,19 +447,23 @@ class AmbientBallSystem {
         var framework = motorController.getFramework()
         var syncedFrameworks = this.getSyncedObjectsById(framework.getId())
 
-        // TODO: change mode
-        var mode =0
-        // TODO get color aswell 
-        // Xaver: maybe we leave it be for with safing the position mhh would not work for sports we need it safed here 
         var moveValues = []
-        var ballStates = []
-        // TODO: get position changes + ball states of each ball
 
+        framework.getBalls().forEach(ball =>  {
+            var moveValue = ball.getState().distance(ball.state[ball.next_active_mode()]) // calculate the distance between two states
+            moveValues.push(moveValue)
+        });
+        /*
+        for (var ball in framework.getBalls()) {
+            console.log(ball)
+            var moveValue = ball.getState().distance(ball.state[ball.next_active_mode()]) // calculate the distance between two states
+            moveValues.push(moveValue);
+        }*/
 
         // update frameworks
         syncedFrameworks.forEach((syncedFramework) => {
             // update ball positions
-            this.updateMotorController(moveValues, ballStates, syncedFramework.getMotorController(), true)
+            this.updateMotorController(moveValues, syncedFramework.getMotorController(), true)
 
             this.applyNextStates(syncedFramework.getBalls())
         })
@@ -391,22 +476,6 @@ class AmbientBallSystem {
         // create room for all balls that are connected together
         socket.on("touch", (touchState) => {this.touchHandler(touchState, socket.id)});
 
-        // create room for all balls that are connected together
-        socket.on("changeMode", () =>{this.changeModeHandler(socket.id)})
-        
-        // All of these are internals that will be called by eg change mode
-        // These events shoudl be emited and then catched on the hardware site
-        // Also all values depend on how hardware wants to receive the data
-        socket.on("setColor", () => {} )
-
-        socket.on("setVibration", () => {})
-
-        socket.on("setBlinking", () => {})
-
-
-        socket.on("test", () => {
-            console.log("test called")
-        })
         // We add a middleware for each socket. we do it here and not in the beginning to filter browser sockets and get access to naming the sockets by their ball id
         // We could also use a standard browser but now we automatically get all incoming calls
         // Note that outgoing is missing!
@@ -433,16 +502,8 @@ class AmbientBallSystem {
     // Or if connections is lost just rtestart the server and restart he client 
 
     add_events_controller(socket) {
-        // create all events for the sockets in here
-        
-        socket.on("callibrate", () => {})
 
-        socket.on("setPosition", () => {})
-
-
-        socket.on("testConroller", () => {
-            console.log("test called")
-        })
+        socket.on("changeMode", () =>{this.changeModeHandler(socket.id)})
 
         socket.use((args, next) => { // it actually has to be a namespace
             let event = args[0] // if we only send data this is not correct (I thikn) but we assume to always send a command
@@ -456,7 +517,7 @@ class AmbientBallSystem {
 
     // example on how to send message
     message (userId, event, data) {
-        io.sockets.to(userId).emit(event, data);
+        //io.sockets.to(userId).emit(event, data);
     }
 
     // Used for logging format the msg as in socket.use code

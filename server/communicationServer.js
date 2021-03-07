@@ -38,6 +38,19 @@ http.listen(3000, "0.0.0.0", () => { // now on chips just specify the address f 
 });
 
 
+// quick and dirty testing
+
+setTimeout( () => {
+  console.log("Quick testing");
+  io.emit("go");
+
+  io.emit("setColor", {rgb : [100,0,50], bla:2}) // this makes length 3 in Jsonarray 
+  // io.emit("setBlinking",)
+  //io.emit("setVibrating",)
+}, 5000 // delay
+)
+
+
 
 // good write up https://stackoverflow.com/questions/9709912/separating-file-server-and-socket-io-logic-in-node-js?rq=1
 // how to seperate the initial logic

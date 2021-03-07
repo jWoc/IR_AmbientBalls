@@ -28,14 +28,16 @@ function createFakeSockets(socketID) {
 
 
 // for simple socket and io simulation
-const io = {
+var io = {
     emit: (command) => {},
     of: (roomid) => {return {
         sockets: {
             get: createFakeSockets,
         }
     }}
+    //sockets: { to: userId => {return socketDict[userId]} }
 }
+io.sockets = { to: (userId) => {return socketDict[userId]} };
 
 // let system = new AmbientBallSystem(new IO_Test()) // delete listeners after initialization
 let system = new AmbientBallSystem(io)
@@ -58,7 +60,10 @@ system.add_client("Framework2_Ball5", "socketID_B10", true)
 system.add_client("Framework1_Controller", "socketID_C1", false)
 system.add_client("Framework2_Controller", "socketID_C2", false)
 
-socketDict["socketID_B3"]["touch"](TOUCHSTATES.BOTTOM)
+socketDict["socketID_C1"]["changeMode"]()
+socketDict["socketID_C1"]["changeMode"]()
+socketDict["socketID_B3"]["touch"]("Both")
+socketDict["socketID_B8"]["touch"]("Both")
 
 console.log("test finished");
 

@@ -68,13 +68,14 @@ class BallState {
     constructor(position, mode = AmbientBallModes.EMOTIONS) {
         this.position = position  
         this.mode = mode;  
-        this.color = modeToColor(mode);
+        this.color = this.modeToColor();
         this.touch = TOUCHSTATES.NOTHING;
         this.blink = false;
+        this.vibrate = false;
     }
 
-    modeToColor(mode) {
-        switch(mode) {
+    modeToColor() {
+        switch(this.mode) {
             case AmbientBallModes.EMOTIONS: 
                 return Color('rgb(0,153,9)')
             case AmbientBallModes.SPORT:
@@ -84,8 +85,8 @@ class BallState {
         }
     }
 
-    distance(targetPosition) {
-        return this.position.distance(targetPosition)
+    distance(targetState) {
+        return this.position.distance(targetState.position)
     }
 
     setPosition(targetPosition) {

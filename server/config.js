@@ -3,7 +3,7 @@ config = {
 
     // ball Movement
     moveStepSize: 10/100,
-
+    maxStepCount: 10000,
     sporstUpdateIntervall: 5000, // miliseconds
     activateSportSync: true,
 
