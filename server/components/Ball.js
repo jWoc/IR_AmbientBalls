@@ -30,8 +30,21 @@ class Ball {
         // get internal state position for yourself and the ball
     }
 
-    next_active_state() {
+    next_active_mode() {
+        var mode = this.active_state;
 
+        if (mode === AmbientBallModes.EMOTIONS) {
+            return AmbientBallModes.SPORT;
+        }
+        else if (mode === AmbientBallModes.SPORT) {
+            return AmbientBallModes.TOUCH
+        }
+        else if (mode === AmbientBallModes.TOUCH) {
+            return AmbientBallModes.EMOTIONS;
+        }
+        else {
+            console.log("Error" + mode + "was not a valid mode");
+        }
     }
 
     getId() {
@@ -40,6 +53,7 @@ class Ball {
     getSportsState() {
         return this.state[AmbientBallModes.SPORT]
     }
+
 }
 
 
@@ -54,8 +68,20 @@ class BallState {
     constructor(position, mode = AmbientBallModes.EMOTIONS) {
         this.position = position  
         this.mode = mode;  
-        this.color = Color('rgb(255, 255, 255)');
+        this.color = modeToColor(mode);
         this.touch = TOUCHSTATES.NOTHING;
+        this.blink = false;
+    }
+
+    modeToColor(mode) {
+        switch(mode) {
+            case AmbientBallModes.EMOTIONS: 
+                return Color('rgb(0,153,9)')
+            case AmbientBallModes.SPORT:
+                return Color('rgb(255, 128,0)');
+            case AmbientBallModes.TOUCH:
+                return Color('rgb(255, 51, 51)'); // light red
+        }
     }
 
     distance(targetPosition) {

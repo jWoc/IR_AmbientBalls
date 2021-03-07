@@ -281,11 +281,35 @@ class AmbientBallSystem {
         var syncedBalls = this.getSyncedObjectsById(ball.getId())
 
         // TODO
+        // 1 Check if both balls are in the touch state right now (otherwise nothing hppens)
+        // Check if ypur own ball is in tpuched red color (that pulses)
+        // 2.1 If not set it to pulse red / just blink aswell
+        // 3 Then check if the synced  ball is touched from both sides aswell 
+        // 3.1 If not tpuched let it vibrate and blinking red
+        // 3.2 If touched from both sides change vibrating and stop blinking 
+        // 3.3 Now vibration should pulse (shoulc be maybe controlled on client that we staarted it )
+        // Now if one of them leaves repeat to 2
         throw new Error("skinHandler not yet Implemented")
     }
 
+    convert_touchstate(touch_str) {
+        if (touch_str === "Top") {
+            return TOUCHSTATES.TOP;
+        }
+        else if (touch_str === "Bot") {
+            return TOUCHSTATES.BOTTOM;
+        }
+        else if (touch_str === "Both") {
+            return TOUCHSTATES.BOTH
+        }
+        else {
+            console.log("The touchState" + touch_str + "that was sent from the ball does not work")
+        }
+    }
 
     touchHandler(touchState, socketID) {
+
+        var touchState = convert_touchstate(touchState) // convert touchState since it is just a string to the enum
         switch(touchState) {
             case TOUCHSTATES.TOP:
             case TOUCHSTATES.BOTTOM: 
@@ -301,19 +325,26 @@ class AmbientBallSystem {
     }
 
 
-    resetBall(ball, mode) {
+    applyState(ball) {
         throw new Error("updateBalls: not yet implemented")
+        var next_mode = ball.next_active_mode()
+
+        // set and get the next active state
+        ball.active_state = next_mode;
+        var ballState = ball.getState();
+        // Not sure for blinking and vibration we just send the event and handle it as boolean
+        this.message(ball.socketID, "setColor", {rgb: ballState.color.rgb().array()});
+        // Vibration and blinking should send a field if we should start or stop vibrating / blinking
+        this.message(ball.socketID, "setBlinking", {start: ball.blink, rgb: [255,0,0]});
+        this.message(ball.socketID, "setVibrating", {start: ball.})
+        // Now get the state from there 
         // TODO: send ball state updates: blink, vibrate, color: depends on mod
         // update ball active state
-        switch(mode) {
-            default:
-            break
-        }
     }
 
-    resetBalls(ballList, mode) {
+    applyNextStates(ballList) {
         ballList.forEach((ball) => {
-            this.resetBall(ball, mode)
+            this.applyState(ball, mode)
         })
     }
 
@@ -336,7 +367,8 @@ class AmbientBallSystem {
 
         // TODO: change mode
         var mode =0
-
+        // TODO get color aswell 
+        // Xaver: maybe we leave it be for with safing the position mhh would not work for sports we need it safed here 
         var moveValues = []
         var ballStates = []
         // TODO: get position changes + ball states of each ball
@@ -347,7 +379,7 @@ class AmbientBallSystem {
             // update ball positions
             this.updateMotorController(moveValues, ballStates, syncedFramework.getMotorController(), true)
 
-            this.resetBalls(syncedFramework.getBalls(), mode)
+            this.applyNextStates(syncedFramework.getBalls())
         })
     }
 
