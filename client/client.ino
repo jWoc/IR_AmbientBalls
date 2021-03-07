@@ -23,14 +23,14 @@ unsigned long messageTimestamp = 0;
 const long blink_interval = 1000; // in ms
 unsigned long prev_millis = 0;
 
-// Which pin on the Arduino is connected to the NeoPixels?
-#define LEDPIN        6 
-#define TOUCHPINTOP   9
-#define TOUCHPINBOT   10
-#define VIBPIN        11 // vibration motor
+// Which pin on the ESP8266 is connected to the which sensor?
+#define LEDPIN        5  // Neopixel - GPIO5 - D1
+#define TOUCHPINTOP   4  // FSR - GPIO4 - D2
+#define TOUCHPINBOT   14 // FSR - GPIO14 - D5
+#define VIBPIN        12 // vibration motor - GPIO12 - D6
 
-// How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS 16 //
+// How many NeoPixels are attached to the ESP8266?
+#define NUMPIXELS 12 //as of now
 
 // When setting up the NeoPixel library, we tell it how many pixels,
 // and which pin to use to send signals.
@@ -195,8 +195,14 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
 void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
-
-    // define PINS as input
+    
+    // Defining the pins
+    pinMode(LEDPIN, OUTPUT);
+    pinMode(TOUCHPINTOP, OUTPUT);
+    pinMode(TOUCHPINBOT, OUTPUT);
+    pinMode(VIBPIN, OUTPUT);
+ 
+ 
       for(uint8_t t = 4; t > 0; t--) {
           Serial.printf("[SETUP] BOOT WAIT %d...\n", t);
           Serial.flush();
