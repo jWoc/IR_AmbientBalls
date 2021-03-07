@@ -83,7 +83,10 @@ void checkButtonState() {
     // 
     // Condtion if we detected that the button is pressed
     if (digitalRead(pinButton)) { // we read a 1 and not a 0
-    // Create Json object
+
+        DynamicJsonDocument doc(1024);
+        JsonArray array = doc.to<JsonArray>();
+        array.add("changeMode");
         socketIO.sendEvent("ChangeMode");
         // If the button is pressed we want to sleep for a second to not spam the server with changeMode events
         delay(1000); 
