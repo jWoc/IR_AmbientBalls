@@ -25,8 +25,8 @@ unsigned long prev_millis = 0;
 
 // Which pin on the ESP8266 is connected to the which sensor?
 #define LEDPIN        5  // Neopixel - GPIO5 - D1
-#define TOUCHPINTOP   4  // FSR - GPIO4 - D2
-#define TOUCHPINBOT   14 // FSR - GPIO14 - D5
+#define TOUCHPINTOP   0  // FSR - ADC0 - A0 //using pwm for one fsr
+#define TOUCHPINBOT   14 // FSR - GPIO14 - D5 //using normal digital pin for one fsr
 #define VIBPIN        12 // vibration motor - GPIO12 - D6
 
 // How many NeoPixels are attached to the ESP8266?
@@ -198,8 +198,8 @@ void setup() {
     
     // Defining the pins
     pinMode(LEDPIN, OUTPUT);
-    pinMode(TOUCHPINTOP, OUTPUT);
-    pinMode(TOUCHPINBOT, OUTPUT);
+    pinMode(TOUCHPINTOP, INPUT);
+    pinMode(TOUCHPINBOT, INPUT);
     pinMode(VIBPIN, OUTPUT);
  
  
