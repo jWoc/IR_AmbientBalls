@@ -39,7 +39,6 @@ config = {
                 "Framework1_Ball2",
                 "Framework1_Ball3",
                 "Framework1_Ball4",
-                "Framework1_Ball5",
             ],
         }, {
             id: "Framwork2",
@@ -49,7 +48,6 @@ config = {
                 "Framework2_Ball2",
                 "Framework2_Ball3",
                 "Framework2_Ball4",
-                "Framework2_Ball5",
             ],
         },
     ],
