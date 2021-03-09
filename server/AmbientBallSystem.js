@@ -539,12 +539,11 @@ class AmbientBallSystem {
         }
         // console.log("targetPos: ", targetPos)
         var targetPos = new Position(targetPercentagePos)
-        var distance = ballState.distance(targetPos)
+        var distance = ballState.position.distance(targetPos)
         if (distance != 0) {
             var controller = ball.getFramework().getMotorController()
             var ballIndex = ball.getFramework().getIndex(ball)
             controller.updatePosition(ballIndex, ballState, distance, ball.active_state == AmbientBallModes.SPORT)
-            console.log("Ball Movement command: Distance: ", distance)
         }
 
     }
