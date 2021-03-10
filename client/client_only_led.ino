@@ -13,25 +13,17 @@
 ESP8266WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
 
-const char id[] = "Framework1_Ball1";
+const char id[] = "Framework1_Ball4";
 
 bool started = false;
 // For led control
 bool blinking = false;
 bool led_on = false; // this is only used for blinking not for actual setColor (since the led should always be on
-unsigned long messageTimestamp = 0;
-const long blink_interval = 500; // in ms
+const long blink_interval = 1000; // in ms
 unsigned long prev_millis = 0;
 
-String old_location = "Nothing";
-int switch_r = 0;
-int switch_g = 0;
-int switch_b = 0;
 // Which pin on the ESP8266 is connected to the which sensor?
-#define LEDPIN        D1  // Neopixel - GPIO5 - D1
-#define TOUCHPINTOP   0  // FSR - ADC0 - A0 //using pwm for one fsr
-#define TOUCHPINBOT   14 // FSR - GPIO14 - D5 //using normal digital pin for one fsr
-#define VIBPIN        12 // vibration motor - GPIO12 - D6
+#define LEDPIN        D8  // Neopixel - GPIO5 - D1
 
 // How many NeoPixels are attached to the ESP8266?
 #define NUMPIXELS 5 //as of now
@@ -86,18 +78,6 @@ void switchcolor(int r, int g, int b)
   }
 }
 
-void setVibration(bool on)
-{ 
-  // If I read correctly we set vib motor with analogWrite (for PWM) this is a value between 0 and 255 (max is dependent on the current
-  // so for a ramp up effect we would call analogWrite in a loop
-  // for other effects we need to send additional data or create new functions we could also say that we ramp up
-  if (on) {
-    digitalWrite(VIBPIN, HIGH);
-  }
-  else {
-    digitalWrite(VIBPIN, LOW);
-  }
-}
 
 
 void startOperation()
@@ -153,21 +133,7 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
                     int b = v[2];
                     switchcolor(r, g, b);
                }
-              else if(strcmp(eventName.c_str(), "setVibrating") == 0)  
-               {     
-                    if (doc.size() != 2) {
-                      Serial.printf("Received wrong number of arguments, size was %d", doc.size());
-                      break;
-                    }
-                    if (!doc[1].containsKey("start")) {
-                      Serial.println("Argument does not have key start, Breaking");
-                      break;
-                    }
-                    bool on = doc[1]["start"];
-                    Serial.print("In SetVibration");
-                    Serial.println(on);
-                    setVibration(on);
-               }
+             
               else if(strcmp(eventName.c_str(), "setBlinking") == 0)
                { 
                     if (doc.size() != 2) {
@@ -179,11 +145,6 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
                       break;
                     }
                     bool on = doc[1]["start"];
-                    JsonArray v= doc[1]["rgb"]; // get the key from the object returns an array for 3 values if ke does not exist it does not throw an error
-                    switch_r = v[0]; // implicit type convwersion happens here ote that we dont check the range
-                    switch_g = v[1];
-                    switch_b = v[2];
-                    
                     if (on) {
                       blinking = true;
                       prev_millis = millis(); // since if turned off it still runs and then now and prev are out of synv      
@@ -226,11 +187,6 @@ void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     
-    // Defining the pins
-    //pinMode(LEDPIN, OUTPUT);
-    pinMode(TOUCHPINBOT, INPUT);
-    pinMode(VIBPIN, OUTPUT);
- 
  
       for(uint8_t t = 4; t > 0; t--) {
           Serial.printf("[SETUP] BOOT WAIT %d...\n", t);
@@ -266,77 +222,28 @@ void setup() {
 }
 
 
-void checkTouchState()
-{
-  int pressureTop = analogRead(TOUCHPINTOP); // val between 0 and 1023
-  int pressureBot = digitalRead(TOUCHPINBOT);
-  Serial.print("Top sensor: ");
-  Serial.println(pressureTop);
-  Serial.print("Bop sensor: ");
-  Serial.println(pressureBot);
-    String location = "";
-  // For now we just have one threshold pressed or not pressed but we could detect light toucvh medium touch etc
-
-  if(pressureTop >= 10 && pressureBot) {
-    location = "Both";
-  }
-  else if(pressureTop >= 10) {
-    location = "Top";
-  }
-  else if(pressureBot) {
-    location = "Bot";
-  }
-  else {
-    location = "Nothing";
-  }
-  if(strcmp(old_location.c_str(), "Nothing") == 0 && strcmp(location.c_str(), "Nothing") == 0) {
-    return; // Dont send anything 
-  }
-  old_location = location;
-  // Sensor touch - digital out to indicate whether sensor is touched or not , top/bottom/both
-  // Check how we wanto to send data
-  DynamicJsonDocument doc(1024);
-  JsonArray array = doc.to<JsonArray>();
-  
-  array.add("touch");
-
-  // add payload (parameters) for the event
-  JsonObject param1 = array.createNestedObject();
-  param1["location"] = location; // possivle values dependent on what si pressedBottom Both Top
-
-  String output;
-  serializeJson(doc, output);
-
-  // Send event        
-  socketIO.sendEVENT(output);
-} 
-
 void switchLED() {
   // depending on state turn the stripe on or off
-  Serial.println("In blinking:");
-  Serial.print(led_on);
-  if (led_on) {
-    pixels.fill(pixels.Color(switch_r, switch_g, switch_b));
+  int val;
+  if(led_on) {
+    val = 0;
   }
   else {
-    pixels.fill(pixels.Color(0,0,0));
+    val = 255;
   }
-
-  pixels.show();   // Send the updated pixels colors to the hardware.
   led_on = !led_on; // switch the state
+  
+  for(int i=0; i<NUMPIXELS; i++) { // For each pixel...
+    pixels.fill(i, val); // fill uses val for r g b 
+  }
+  pixels.show();   // Send the updated pixels colors to the hardware.
+  
 }
 
 
 void loop() {
     socketIO.loop();
     uint64_t now = millis();
-    if (now - messageTimestamp > 500) { // we check the state of teh buttons every 200ms
-      messageTimestamp = now;
-      if(started) {
-        checkTouchState();
-      }
-    }
-    
     if (blinking) {
       // we blink in an interval
       if (now - prev_millis >= blink_interval) {
