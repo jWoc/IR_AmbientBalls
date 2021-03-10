@@ -8,4 +8,9 @@ socket.on('requestID', function(data) {
     socket.emit('registerID', {id : "Framework2_Ball4"}, {isBall : true});
 });
 
-// 
+/*socket.on("go", () => {
+    console.log("register changemod trigger")
+    setInterval(() => {
+        socket.emit('changeMode');
+    }, 5000)
+})*/

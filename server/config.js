@@ -2,10 +2,10 @@
 config = {
 
     // ball Movement
-    moveStepSize: 10/100,
-    maxStepCount: 10000,
+    moveStepSize: (2/100),
+    maxStepCount: 4000, // measured by test
     sporstUpdateIntervall: 5000, // miliseconds
-    activateSportSync: true,
+    activateSportSync: false,
 
     // get new access token (valid for 6 h)
     // command for athlete 1 (Johannes Wocker):

@@ -9,9 +9,11 @@ class Ball {
         this.parentFramework = parentFramework
         this.socket= socket;
         this.id = id
-        this.state.push(new BallState(new Position(0), AmbientBallModes.EMOTIONS))
-        this.state.push(new BallState(new Position(0), AmbientBallModes.SPORT))
-        this.state.push(new BallState(new Position(0), AmbientBallModes.TOUCH))
+        this.state.push(new BallState(new Position(1), AmbientBallModes.EMOTIONS))
+        this.state.push(new BallState(new Position(1), AmbientBallModes.SPORT))
+        this.state.push(new BallState(new Position(1), AmbientBallModes.TOUCH))
+
+        this.socketID = socket.id;
     }
 
     getState() {

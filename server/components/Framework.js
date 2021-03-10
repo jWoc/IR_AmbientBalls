@@ -22,6 +22,10 @@ class Framework {
         return this.balls.indexOf(ball)
     }
 
+    getBallByIndex(index) {
+        return this.balls[index]
+    }
+
     changeMode() {
 
     }

@@ -40,7 +40,7 @@ http.listen(3000, "0.0.0.0", () => { // now on chips just specify the address f 
 
 // quick and dirty testing
 
-setTimeout( () => {
+/*setTimeout( () => {
   console.log("Quick testing");
   io.emit("go");
 
@@ -48,7 +48,7 @@ setTimeout( () => {
   // io.emit("setBlinking",)
   //io.emit("setVibrating",)
 }, 5000 // delay
-)
+)*/
 
 
 

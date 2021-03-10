@@ -33,6 +33,9 @@ class AmbientBallSystem {
 
         // initiate Sports-API Connection
         this.sportsConnection = new StravaSportsDataCollector()
+
+        // blinkingColor
+        this.blinkingColor = Color("rgb(255,0,0)");
     }
     
     createSyncMapper() {
@@ -156,7 +159,7 @@ class AmbientBallSystem {
 
             // create framework
             var frameworkObject = new Framework(framework.id, ballParameters, controllerParameter)
-            this.frameworks.push[frameworkObject]
+            this.frameworks.push(frameworkObject)
 
             // create mapper (id to object)
             this.idToObject[frameworkObject.getId()] = frameworkObject
@@ -195,6 +198,17 @@ class AmbientBallSystem {
                 this.updateSportsState()
             }, config.sporstUpdateIntervall)
         }
+
+        
+        // initialize colors
+        var allBalls = []
+        this.frameworks.forEach((framework) => {
+            allBalls = allBalls.concat(framework.getBalls())
+        })
+        allBalls.forEach((ball) => {
+            this.resetBall(ball);    
+        });
+        
     }   
 
     add_client(id, socketID, isBall) {
@@ -268,11 +282,12 @@ class AmbientBallSystem {
 
 
             syncedFrameworks.forEach((syncedFramework)=> {
-                syncedFramework.getMotorController().updatePosition(ballIndex, ball.getState(), moveValue, true)
+                var syncedball = syncedFramework.getBallByIndex(ballIndex)
+                syncedFramework.getMotorController().updatePosition(ballIndex, syncedball.getState(), moveValue, true)
             })
 
         } else {
-            console.error("moveHandler: You can not move a ball which is not in EMOTIONS mode")
+            // console.error("moveHandler: You can not move a ball which is not in EMOTIONS mode")
         }
     }
 
@@ -280,16 +295,17 @@ class AmbientBallSystem {
         var ballState = ball.getState();
         ballState.blink = false;
         ballState.vibrate = false;
-        this.message(ball.socketID, "setBlinking", {start: ballState.blink} );
+        this.message(ball.socketID, "setBlinking", {start: ballState.blink, rgb: this.blinkingColor.rgb().array()} );
         this.message(ball.socketID, "setVibrating", {start: ballState.vibrate} );
     }
+    
 
     changeSkinBall_notifyTouched_setBallUnTouched(ball) {
         var untouchedState = ball.getState();
         untouchedState.blink = true;
         untouchedState.vibrate = true;
-        this.message(untouchedBall.socketID, "setBlinking", {start: untouchedState.blink} );
-        this.message(untouchedBall.socketID, "setVibrating", {start: untouchedState.vibrate} );
+        this.message(ball.socketID, "setBlinking", {start: untouchedState.blink, rgb: this.blinkingColor.rgb().array()} );
+        this.message(ball.socketID, "setVibrating", {start: untouchedState.vibrate} );
     }
 
 
@@ -314,14 +330,14 @@ class AmbientBallSystem {
             //console.log(notTouchedBalls.length)
             // 2 special cases
             if (oldTouchState != newTouchState && newTouchState === TOUCHSTATES.NOTHING) {
+                console.log("remove touch")
                 // we remove hand
                 // a ) no ball is touched
                 // b) there are some that are still touched then your own should start blinking
-                // c) there are some still touched and all were touched so we need to change color                 
-
+                // c) there are some still touched and all were touched so we need to change color               
                 if (notTouchedBalls.length == 1) { // c) there are still some touched
-                    this.changeBallColors(syncedBalls, ball.modeToColor()) // modeToColor is default color
                     this.changeSkinBall_notifyTouched_setBallUnTouched(notTouchedBalls[0]); // ball should now vobrate
+                    this.changeBallColors(syncedBalls, ball.getState().modeToColor()) // modeToColor is default color
                 }
 
                 else if (notTouchedBalls.length == syncedBalls.length) { // a
@@ -335,6 +351,7 @@ class AmbientBallSystem {
                 }
             }
             else if (oldTouchState != TOUCHSTATES.BOTH && newTouchState === TOUCHSTATES.BOTH) { // was not touched before from both sides
+                console.log("touch both: positive edge")
                 // cases (so ball will be touched)
                 // a) all are now touched
                 // b) some are still not touched
@@ -342,15 +359,19 @@ class AmbientBallSystem {
                 // reset blinking and vibrating of the ball that is now touched
                 if (notTouchedBalls.length == 0) { // a)
                     console.log("Case a) when you start touching. All touched")
-                    this.changeBallColors(syncedBalls, Color("rgb(139,0,0)"));
                     this.changeSkinBall_notifyTouched_setBallTouched(ball); // stop vibrating
+                    this.changeBallColors(syncedBalls, Color("rgb(255,255,255)"));
                 }
                 else { // b)
                     this.changeSkinBall_notifyTouched_setBallTouched(ball);
+                    notTouchedBalls.forEach((ball)=>{
+                        this.changeSkinBall_notifyTouched_setBallUnTouched(ball);
+                    })
+                    console.log("case b: some are still not touched")
                 }
             }
             else {
-                console.log("SkinHandler error. Good Luck. newTouchState was: " + newTouchState + "and oldTouchstate was: " + oldTouchState);
+                // console.log("SkinHandler (error). Good Luck. newTouchState was: " + newTouchState + "and oldTouchstate was: " + oldTouchState);
             }
 
         }
@@ -383,11 +404,15 @@ class AmbientBallSystem {
             return TOUCHSTATES.NOTHING;
         }
         else {
-            console.log("The touchState" + touch_str + "that was sent from the ball does not work")
+            console.log("The touchState", touch_str, "that was sent from the ball does not work")
         }
     }
 
     touchHandler(touchState, socketID) {
+
+        // debug log 
+        var ball = this.getObjectBySocketId(socketID)
+        // console.log("Ball " + ball.getId() + " is getting touched: " + touchState)
 
         var touchState = this.convert_touchstate(touchState) // convert touchState since it is just a string to the enum
         switch(touchState) {
@@ -410,9 +435,9 @@ class AmbientBallSystem {
         ballState.color = ballState.modeToColor(); // reset color (can happen if we are in touch case)
         ballState.blink = false;
         ballState.vibrate = false;
-        this.message(ball.socketID, "setColor", {rgb: ballState.color.rgb().array()});
-        this.message(ball.socketID, "setBlinking", {start: ballState.blink});
+        this.message(ball.socketID, "setBlinking", {start: ballState.blink, rgb: this.blinkingColor.rgb().array()});
         this.message(ball.socketID, "setVibrating", {start: ballState.vibrate});
+        this.message(ball.socketID, "setColor", {rgb: ballState.color.rgb().array()});
     }
 
     applyState(ball) {
@@ -472,9 +497,11 @@ class AmbientBallSystem {
 
     add_events_balls(socket) {
         // create all events for the sockets
+
+        socket.on("changeMode", () =>{this.changeModeHandler(socket.id)})
         
         // create room for all balls that are connected together
-        socket.on("touch", (touchState) => {this.touchHandler(touchState, socket.id)});
+        socket.on("touch", (touchState) => {this.touchHandler(touchState.location, socket.id)});
 
         // We add a middleware for each socket. we do it here and not in the beginning to filter browser sockets and get access to naming the sockets by their ball id
         // We could also use a standard browser but now we automatically get all incoming calls
@@ -517,7 +544,9 @@ class AmbientBallSystem {
 
     // example on how to send message
     message (userId, event, data) {
-        //io.sockets.to(userId).emit(event, data);
+        this.io.sockets.to(userId).emit(event, data);
+        //console.log(event, ": ", userId, ": ", this.getObjectBySocketId(userId).getId())
+        //console.log(data);
     }
 
     // Used for logging format the msg as in socket.use code
@@ -543,7 +572,10 @@ class AmbientBallSystem {
         if (distance != 0) {
             var controller = ball.getFramework().getMotorController()
             var ballIndex = ball.getFramework().getIndex(ball)
-            controller.updatePosition(ballIndex, ballState, distance, ball.active_state == AmbientBallModes.SPORT)
+            var syncedBalls = this.getSyncedObjectsById(ball.getId())
+            syncedBalls.forEach((syncedBall) => {
+                controller.updatePosition(ballIndex, syncedBall.getState(), distance, ball.active_state == AmbientBallModes.SPORT)
+            })
         }
 
     }

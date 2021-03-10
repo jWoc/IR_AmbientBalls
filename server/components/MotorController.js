@@ -36,9 +36,10 @@ class MotorController {
             
             var moveCommandValue = {
                 id: ballIndex,
-                calculatedSteps: calculatedSteps,
+                position: calculatedSteps,
             }
             this.socket.emit("setPosition", moveCommandValue)
+            // console.log(moveCommandValue)
         }
     }
 }
