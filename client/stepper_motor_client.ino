@@ -1,39 +1,46 @@
 #include <Arduino.h>
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
+#include <WiFi.h>
 
 #include <ArduinoJson.h>
 
 #include <WebSocketsClient.h>
 #include <SocketIOclient.h>
 #include <Stepper.h>
-#include <Hash.h>
+//#include <Hash.h>
 
-ESP8266WiFiMulti WiFiMulti;
+//ESP8266WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
 
 #define USE_SERIAL Serial
 
-const int pinButton = 0; // Used for the button, number is the Pin we connect to
+const int pinButton = 34; // Used for the button, number is the Pin we connect to
 
 bool started = false; // used to control if we can press button
 
-const char id[] = "Framework2_Controller";
+const char id[] = "Framework1_Controller";
 // Define Stepper constants
 const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
 // for your motor
 
 // 5 steppers for 5 balls
-/*Stepper stepper0(stepsPerRevolution, 8, 9, 10, 11);
-Stepper stepper1(stepsPerRevolution, 8, 9, 10, 11);
-Stepper stepper2(stepsPerRevolution, 8, 9, 10, 11);
-Stepper stepper3(stepsPerRevolution, 8, 9, 10, 11);
-Stepper stepper4(stepsPerRevolution, 8, 9, 10, 11);
 
-// for easy indexing
-Stepper steppers[] = {stepper0, stepper1, stepper2, stepper3, stepper4};
+ //ball 1 
+Stepper stepper0(stepsPerRevolution, 14, 26, 27, 25); // framework1 ball 1
+Stepper stepper1(stepsPerRevolution, 5, 19, 18, 21); // framework1 ball 2
+Stepper stepper2(stepsPerRevolution, 22, 13, 23, 12); // framework1 ball3 
+Stepper stepper3(stepsPerRevolution, 15, 4, 2, 16); // framework 1 ball 4
+/*
+
+//ball2
+Stepper stepper2(stepsPerRevolution, 14, 26, 27, 25); // framework2 ball 3
+Stepper stepper1(stepsPerRevolution, 5, 19, 18, 21); // framework2 ball 2
+Stepper stepper3(stepsPerRevolution, 22, 13, 23, 12); // framework2 ball4
+Stepper stepper0(stepsPerRevolution, 15, 4, 2, 16); // framework 2 ball 1
 */
+// for easy indexing
+Stepper steppers[] = {stepper0, stepper1, stepper2, stepper3};
+
 
 void sendID() {
     // creat JSON message for Socket.IO (event)
@@ -65,9 +72,9 @@ void start() {
 
 void setPosition(int id, int position) {
 
-    //Stepper stepper = steppers[id];
+    Stepper stepper = steppers[id];
     
-    //stepper.step(position); // negative number is counterclockwise 
+    stepper.step(position); // negative number is counterclockwise 
     return;
 }
 
@@ -80,19 +87,21 @@ uint64_t last_pressed = 0; // used to delay button signal
 void checkButtonState() {
     // 
     // Condtion if we detected that the button is pressed
-    if (digitalRead(pinButton)) { // we read a 1 and not a 0
-<<<<<<< HEAD
-
+    int pressed = digitalRead(pinButton);
+    //Serial.println("Button Press: ");
+    //Serial.println(pressed);
+    if (pressed) { // we read a 1 and not a 0
         DynamicJsonDocument doc(1024);
         JsonArray array = doc.to<JsonArray>();
+        
+        // add event name
+        // Hint: socket.on('event_name', ....
         array.add("changeMode");
-        socketIO.sendEvent("ChangeMode");
-        // If the button is pressed we want to sleep for a second to not spam the server with changeMode events
-        delay(1000); 
-=======
-        socketIO.sendEVENT("ChangeMode");
+        String output;
+        serializeJson(doc, output);
+        Serial.print(output);
+        socketIO.sendEVENT(output);
         last_pressed = millis();
->>>>>>> 5ed710ff691abb101a44cc4cd09be74aed76080f
     }
 }
 
@@ -154,19 +163,19 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
             break;
         case sIOtype_ACK:
             USE_SERIAL.printf("[IOc] get ack: %u\n", length);
-            hexdump(payload, length);
+            //hexdump(payload, length);
             break;
         case sIOtype_ERROR:
             USE_SERIAL.printf("[IOc] get error: %u\n", length);
-            hexdump(payload, length);
+            //hexdump(payload, length);
             break;
         case sIOtype_BINARY_EVENT:
             USE_SERIAL.printf("[IOc] get binary: %u\n", length);
-            hexdump(payload, length);
+            //hexdump(payload, length);
             break;
         case sIOtype_BINARY_ACK:
             USE_SERIAL.printf("[IOc] get binary ack: %u\n", length);
-            hexdump(payload, length);
+            //hexdump(payload, length);
             break;
     }
 }
@@ -179,12 +188,12 @@ void setup() {
     USE_SERIAL.setDebugOutput(true);
 
     // Pin intitlaizations
-    //pinMode(pinButton, INPUT); // specify that Pin used is INPUT so we receive data
+    pinMode(pinButton, INPUT); // specify that Pin used is INPUT so we receive data
 
     // set the speed at 60 rpm for all stepper motors
-    //for (int i = 0; i < 5; i++) {
-    //    steppers[i].setSpeed(60);
-    //}
+    for (int i = 0; i < 4; i++) {
+        steppers[i].setSpeed(60);
+    }
 
     USE_SERIAL.println();
     USE_SERIAL.println();
@@ -195,37 +204,45 @@ void setup() {
           USE_SERIAL.flush();
           delay(1000);
       }
-
+    const char* ssid = "FRITZ!Box 7520 YO";
+    const char* password = "15306411612860148077";
+    WiFi.begin(ssid, password);
+   
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.println("Establishing connection to WiFi..");
+    }
+   
+    Serial.println("Connected to network");
+ 
+    Serial.println(WiFi.macAddress());
+    Serial.println(WiFi.localIP());
+   
+    Serial.println(WiFi.localIP());
     // disable AP
     if(WiFi.getMode() & WIFI_AP) {
         WiFi.softAPdisconnect(true);
     }
-
-    WiFiMulti.addAP("blabla", "blabal");
-
-    while(WiFiMulti.run() != WL_CONNECTED) {
-        delay(100);
-    }
-
+    
     String ip = WiFi.localIP().toString();
     USE_SERIAL.printf("[SETUP] WiFi Connected %s\n", ip.c_str());
-
+    
     // server address, port and URL
-    socketIO.begin("192.168.1.152", 3000);
+    socketIO.begin("192.168.178.44", 3000);
 
     // event handler
     socketIO.onEvent(socketIOEvent);
 }
 
 
-
+int steps = 0;
 void loop() {
     uint64_t now = millis();
     socketIO.loop();
-    
     if (started) {
-        if(now - last_pressed > 200) {// we dont want to spam the server if you press the button for to long
+        if((now - last_pressed) > 500) {// we dont want to spam the server if you press the button for to long
         checkButtonState(); // Now dependent if we want to receive events all 200ms or inside button
         }
+        
     }
 }
